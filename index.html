@@ -56,9 +56,41 @@
           background: rgba(255,255,255,0.12); transition: all .25s; }
   #mode:hover { background: rgba(255,255,255,0.22); }
   #mode:active { transform: scale(.95); }
-  /* 下部の時刻プルダウン（幅は内容に合わせる） */
-  #timesel { width: auto; flex: 0 0 auto; min-width: 104px;
-             font-variant-numeric: tabular-nums; padding: 10px 14px; }
+  /* 下部の時刻ボタン（タップでホイールを開く） */
+  #timebtn { border: 1px solid rgba(255,255,255,0.35); border-radius: 12px; cursor: pointer;
+             white-space: nowrap; font-size: 14px; font-weight: 700; color: #fff; padding: 10px 16px;
+             min-width: 96px; background: rgba(255,255,255,0.12); transition: all .25s;
+             font-variant-numeric: tabular-nums; }
+  #timebtn:hover { background: rgba(255,255,255,0.22); }
+  #timebtn:active { transform: scale(.96); }
+
+  /* ホイール時刻ピッカー */
+  #tpick { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end;
+           justify-content: center; background: rgba(0,0,0,0.42); backdrop-filter: blur(3px); }
+  #tpick.hidden { display: none; }
+  .tp-card { background: rgba(20,22,34,0.94); border: 1px solid rgba(255,255,255,0.14);
+             border-radius: 22px 22px 0 0; padding: 12px 20px 26px; width: min(100vw, 440px);
+             box-shadow: 0 -12px 50px rgba(0,0,0,0.5); }
+  .tp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .tp-head span { font-size: 13px; opacity: .7; letter-spacing: .05em; }
+  .tp-head button { background: none; border: none; font-size: 16px; font-weight: 700;
+                    cursor: pointer; padding: 8px 6px; }
+  #tpNow { color: #9cc4ff; }
+  #tpDone { color: #ffd27a; }
+  .tp-wheels { position: relative; display: flex; align-items: center; justify-content: center;
+               gap: 4px; height: 200px; }
+  .tp-colon { font-size: 26px; font-weight: 600; opacity: .55; padding-bottom: 3px; }
+  .tp-unit { font-size: 13px; opacity: .5; align-self: center; margin: 0 2px 0 -2px; }
+  .wheel { height: 200px; width: 84px; overflow-y: scroll; scroll-snap-type: y mandatory;
+           -webkit-mask: linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent);
+           mask: linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent);
+           scrollbar-width: none; }
+  .wheel::-webkit-scrollbar { display: none; }
+  .witem { height: 40px; display: flex; align-items: center; justify-content: center;
+           font-size: 27px; font-weight: 500; font-variant-numeric: tabular-nums;
+           scroll-snap-align: center; transition: opacity .12s, transform .12s; }
+  .tp-pill { position: absolute; left: 8px; right: 8px; top: 80px; height: 40px; border-radius: 12px;
+             background: rgba(255,255,255,0.10); pointer-events: none; }
 
   /* アプリ名 */
   #appname { position: fixed; z-index: 20; top: 18px; left: 22px; pointer-events: none;
@@ -96,7 +128,25 @@
   <div id="dock">
     <button id="mode">⇆ 比較</button>
     <input id="datep" type="date">
-    <select id="timesel"></select>
+    <button id="timebtn">🕐 現在</button>
+  </div>
+
+  <div id="tpick" class="hidden">
+    <div class="tp-card">
+      <div class="tp-head">
+        <button id="tpNow">現在</button>
+        <span>時刻をえらぶ</span>
+        <button id="tpDone">決定</button>
+      </div>
+      <div class="tp-wheels">
+        <div class="wheel" id="wheelH"></div>
+        <div class="tp-unit">時</div>
+        <div class="tp-colon">:</div>
+        <div class="wheel" id="wheelM"></div>
+        <div class="tp-unit">分</div>
+        <div class="tp-pill"></div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -251,41 +301,69 @@ function applyMode(){
 }
 modeBtn.addEventListener('click', ()=>{ compare=!compare; applyMode(); renderAll(); });
 
-/* ===== 時刻コントロール（プルダウン） ===== */
-let liveMode=true, clockTimer=null;
-const timesel=document.getElementById('timesel'), dateEl=document.getElementById('datep');
-
-// 時刻の選択肢: 「現在」＋ 10分刻み 00:00〜23:50
-(function buildTimeOptions(){
-  const live=document.createElement('option'); live.value='live'; live.textContent='🕐 現在'; timesel.appendChild(live);
-  for(let m=0;m<1440;m+=10){
-    const o=document.createElement('option'); o.value=m;
-    o.textContent=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
-    timesel.appendChild(o);
-  }
-})();
+/* ===== 時刻コントロール（ホイールピッカー） ===== */
+let liveMode=true, clockTimer=null, selMin=720;
+const dateEl=document.getElementById('datep'), timeBtn=document.getElementById('timebtn');
+const tpick=document.getElementById('tpick'), tpNow=document.getElementById('tpNow'), tpDone=document.getElementById('tpDone');
 
 function currentDate(){
   if(liveMode) return new Date();
-  return zonedWallToDate(panels[0].city.tz, +timesel.value, parseYMD(dateEl.value));
+  return zonedWallToDate(panels[0].city.tz, selMin, parseYMD(dateEl.value));
 }
 function renderAll(){ const d=currentDate(); panels.forEach(p=>renderPanel(p,d)); }
 function ensureTimer(){ if(clockTimer) clearInterval(clockTimer); if(liveMode) clockTimer=setInterval(renderAll,1000); }
-function setLive(){
-  liveMode=true; timesel.value='live';
-  dateEl.value=todayYMDStr(panels[0].city.tz);
-  renderAll(); ensureTimer();
+function timeLabel(){
+  timeBtn.textContent = liveMode ? '🕐 現在'
+    : `${String(Math.floor(selMin/60)).padStart(2,'0')}:${String(selMin%60).padStart(2,'0')}`;
 }
+function setLive(){ liveMode=true; dateEl.value=todayYMDStr(panels[0].city.tz); timeLabel(); renderAll(); ensureTimer(); }
 function enterManual(){ liveMode=false; if(clockTimer) clearInterval(clockTimer); }
 
-timesel.addEventListener('change', ()=>{
-  if(timesel.value==='live') setLive();
-  else { enterManual(); renderAll(); }
-});
+/* --- ホイール部品 --- */
+const ITEM_H=40;
+function makeWheel(el, count, onSettle){
+  el.innerHTML='';
+  const list=document.createElement('div');
+  const spacer=()=>{ const s=document.createElement('div'); s.style.height=(ITEM_H*2)+'px'; return s; };
+  list.appendChild(spacer());
+  for(let i=0;i<count;i++){ const d=document.createElement('div'); d.className='witem'; d.textContent=String(i).padStart(2,'0'); list.appendChild(d); }
+  list.appendChild(spacer());
+  el.appendChild(list);
+  const items=[...list.querySelectorAll('.witem')];
+  function paint(){
+    const idx=el.scrollTop/ITEM_H;
+    items.forEach((it,i)=>{ const dist=Math.abs(i-idx);
+      it.style.opacity=Math.max(0.12,1-dist*0.26);
+      it.style.transform=`scale(${Math.max(0.65,1-dist*0.13)})`; });
+  }
+  let t, controller={ get index(){ return clamp(Math.round(el.scrollTop/ITEM_H),0,count-1); },
+    set index(i){ el.scrollTop=clamp(i,0,count-1)*ITEM_H; paint(); } };
+  el.addEventListener('scroll', ()=>{ paint(); clearTimeout(t);
+    t=setTimeout(()=>{ const idx=controller.index; el.scrollTo({top:idx*ITEM_H,behavior:'smooth'}); onSettle(idx); }, 110); });
+  controller.repaint=paint;
+  return controller;
+}
+const wheelH=makeWheel(document.getElementById('wheelH'), 24, ()=>applyWheel());
+const wheelM=makeWheel(document.getElementById('wheelM'), 60, ()=>applyWheel());
+function applyWheel(){ enterManual(); selMin=wheelH.index*60+wheelM.index; timeLabel(); renderAll(); }
+
+function openPicker(){
+  // 開始値: 手動ならselMin、現在なら対象都市の今の時刻
+  let base=selMin;
+  if(liveMode){ const s=localTimeStr(new Date(), panels[0].city.tz); const mm=/(\d{2}):(\d{2})/.exec(s); if(mm) base=+mm[1]*60+ +mm[2]; }
+  tpick.classList.remove('hidden');
+  requestAnimationFrame(()=>{ wheelH.index=Math.floor(base/60); wheelM.index=base%60; });
+}
+function closePicker(){ tpick.classList.add('hidden'); }
+timeBtn.addEventListener('click', openPicker);
+tpDone.addEventListener('click', closePicker);
+tpNow.addEventListener('click', ()=>{ setLive(); closePicker(); });
+tpick.addEventListener('click', e=>{ if(e.target===tpick) closePicker(); });
+
 dateEl.addEventListener('change', ()=>{
-  // 日付を選んだら過去/未来を見る手動モードへ（「現在」だった場合は12:00に）
-  if(liveMode){ enterManual(); timesel.value='720'; }
-  renderAll();
+  // 日付を選んだら手動モードへ（「現在」だった場合は12:00に）
+  if(liveMode){ enterManual(); selMin=720; }
+  timeLabel(); renderAll();
 });
 
 /* ===== 初期化 ===== */
