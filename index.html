@@ -56,30 +56,26 @@
           background: rgba(255,255,255,0.12); transition: all .25s; }
   #mode:hover { background: rgba(255,255,255,0.22); }
   #mode:active { transform: scale(.95); }
-  #live { border: none; border-radius: 12px; cursor: pointer; white-space: nowrap;
-          font-size: 13px; font-weight: 700; color: #1a1a2a; padding: 10px 14px;
-          background: rgba(255,255,255,0.9); transition: all .25s; }
-  #live.active { background: linear-gradient(135deg,#ffd27a,#ff9d6c); color: #2a1600;
-                 box-shadow: 0 0 0 2px rgba(255,255,255,0.32); }
-  #live:active { transform: scale(.95); }
-  #slider { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; height: 5px;
-            border-radius: 5px; outline: none;
-            background: linear-gradient(90deg, rgba(30,40,90,.9), rgba(120,150,220,.9),
-                        rgba(255,200,140,.95), rgba(120,90,150,.9), rgba(20,24,50,.95)); }
-  #slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #fff, #dfe4ef);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.14); cursor: pointer; }
-  #slider::-moz-range-thumb { width: 22px; height: 22px; border: none; border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #fff, #dfe4ef);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; }
-  #clock { font-size: 14px; font-variant-numeric: tabular-nums; min-width: 92px; text-align: right;
-           text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-  #clock small { opacity: .6; font-size: 11px; }
+  /* 下部の時刻プルダウン（幅は内容に合わせる） */
+  #timesel { width: auto; flex: 0 0 auto; min-width: 104px;
+             font-variant-numeric: tabular-nums; padding: 10px 14px; }
 
   /* アプリ名 */
   #appname { position: fixed; z-index: 20; top: 18px; left: 22px; pointer-events: none;
              font-size: 20px; font-weight: 800; letter-spacing: .12em;
              text-shadow: 0 2px 12px rgba(0,0,0,0.45); opacity: .95; }
+
+  /* スマホ（縦長画面）: 上下2分割 */
+  @media (orientation: portrait) {
+    #stage { flex-direction: column; }
+    .panel + .panel { box-shadow: 0 -1px 0 rgba(255,255,255,0.16); }
+    .ptime { font-size: 44px; }
+    .pname { font-size: 18px; }
+    .ptop { top: 14px; width: min(88%, 240px); }
+    #appname { font-size: 17px; top: 14px; left: 16px; }
+    /* 比較（2分割）時は各パネルの情報が中央だと窮屈なので少し上へ */
+    #stage:not(.single) .pinfo { top: 42%; }
+  }
 </style>
 </head>
 <body>
@@ -99,10 +95,8 @@
 
   <div id="dock">
     <button id="mode">⇆ 比較</button>
-    <button id="live" class="active">🕐 現在</button>
     <input id="datep" type="date">
-    <input id="slider" type="range" min="0" max="1439" step="2" value="720">
-    <div id="clock">現在</div>
+    <select id="timesel"></select>
   </div>
 
 <script>
@@ -257,40 +251,48 @@ function applyMode(){
 }
 modeBtn.addEventListener('click', ()=>{ compare=!compare; applyMode(); renderAll(); });
 
-/* ===== 時刻コントロール ===== */
+/* ===== 時刻コントロール（プルダウン） ===== */
 let liveMode=true, clockTimer=null;
-const slider=document.getElementById('slider'), liveBtn=document.getElementById('live'),
-      clockEl=document.getElementById('clock'), dateEl=document.getElementById('datep');
+const timesel=document.getElementById('timesel'), dateEl=document.getElementById('datep');
+
+// 時刻の選択肢: 「現在」＋ 10分刻み 00:00〜23:50
+(function buildTimeOptions(){
+  const live=document.createElement('option'); live.value='live'; live.textContent='🕐 現在'; timesel.appendChild(live);
+  for(let m=0;m<1440;m+=10){
+    const o=document.createElement('option'); o.value=m;
+    o.textContent=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+    timesel.appendChild(o);
+  }
+})();
 
 function currentDate(){
   if(liveMode) return new Date();
-  return zonedWallToDate(panels[0].city.tz, +slider.value, parseYMD(dateEl.value));
+  return zonedWallToDate(panels[0].city.tz, +timesel.value, parseYMD(dateEl.value));
 }
 function renderAll(){ const d=currentDate(); panels.forEach(p=>renderPanel(p,d)); }
 function ensureTimer(){ if(clockTimer) clearInterval(clockTimer); if(liveMode) clockTimer=setInterval(renderAll,1000); }
 function setLive(){
-  liveMode=true; liveBtn.classList.add('active'); clockEl.innerHTML='現在';
+  liveMode=true; timesel.value='live';
   dateEl.value=todayYMDStr(panels[0].city.tz);
   renderAll(); ensureTimer();
 }
-function enterManual(){ liveMode=false; liveBtn.classList.remove('active'); if(clockTimer) clearInterval(clockTimer); }
-function updateClockLabel(){
-  const m=+slider.value, hh=String(Math.floor(m/60)).padStart(2,'0'), mm=String(m%60).padStart(2,'0');
-  clockEl.innerHTML=`${hh}:${mm} <small>@${panels[0].city.name}</small>`;
-}
-slider.addEventListener('input', ()=>{ enterManual(); updateClockLabel(); renderAll(); });
-dateEl.addEventListener('change', ()=>{ enterManual(); updateClockLabel(); renderAll(); });
-liveBtn.addEventListener('click', setLive);
+function enterManual(){ liveMode=false; if(clockTimer) clearInterval(clockTimer); }
+
+timesel.addEventListener('change', ()=>{
+  if(timesel.value==='live') setLive();
+  else { enterManual(); renderAll(); }
+});
+dateEl.addEventListener('change', ()=>{
+  // 日付を選んだら過去/未来を見る手動モードへ（「現在」だった場合は12:00に）
+  if(liveMode){ enterManual(); timesel.value='720'; }
+  renderAll();
+});
 
 /* ===== 初期化 ===== */
 function initPanel(p, value){
   buildSelect(p.sel, value);
   p.city=cityFromValue(value);
-  p.sel.addEventListener('change', ()=>{
-    p.city=cityFromValue(p.sel.value);
-    if(!liveMode) updateClockLabel();
-    renderAll();
-  });
+  p.sel.addEventListener('change', ()=>{ p.city=cityFromValue(p.sel.value); renderAll(); });
 }
 initPanel(panels[0], 'p:0');   // 札幌
 initPanel(panels[1], 'p:46');  // 那覇
