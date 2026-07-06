@@ -56,20 +56,7 @@
           background: rgba(255,255,255,0.12); transition: all .25s; }
   #mode:hover { background: rgba(255,255,255,0.22); }
   #mode:active { transform: scale(.95); }
-  /* 下部の時刻ボタン（タップでホイールを開く） */
-  #timebtn { border: 1px solid rgba(255,255,255,0.35); border-radius: 12px; cursor: pointer;
-             white-space: nowrap; font-size: 14px; font-weight: 700; color: #fff; padding: 10px 16px;
-             min-width: 96px; background: rgba(255,255,255,0.12); transition: all .25s;
-             font-variant-numeric: tabular-nums; }
-  #timebtn:hover { background: rgba(255,255,255,0.22); }
-  #timebtn:active { transform: scale(.96); }
-  /* 入力方式トグル */
-  #inputToggle { border: 1px solid rgba(255,255,255,0.35); border-radius: 12px; cursor: pointer;
-             font-size: 16px; padding: 9px 11px; color: #fff; background: rgba(255,255,255,0.12);
-             transition: all .25s; }
-  #inputToggle:hover { background: rgba(255,255,255,0.22); }
-  #inputToggle:active { transform: scale(.94); }
-  /* スライダー（数直線）方式 */
+  /* スライダー（数直線）: 常に表示 */
   #slider { flex: 1; min-width: 120px; -webkit-appearance: none; appearance: none; height: 5px;
             border-radius: 5px; outline: none;
             background: linear-gradient(90deg, rgba(30,40,90,.9), rgba(120,150,220,.9),
@@ -80,12 +67,15 @@
   #slider::-moz-range-thumb { width: 22px; height: 22px; border: none; border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #fff, #dfe4ef);
     box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; }
-  #clock { font-size: 14px; font-variant-numeric: tabular-nums; min-width: 84px; text-align: right;
-           text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-  #clock small { opacity: .6; font-size: 11px; }
-  /* 方式ごとの表示切り替え */
-  #dock.wheel-input #slider, #dock.wheel-input #clock { display: none; }
-  #dock:not(.wheel-input) #timebtn { display: none; }
+  /* 時刻表示（タップでホイールを開く） */
+  #clock { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+           min-width: 78px; text-align: center; white-space: nowrap; cursor: pointer;
+           color: #fff; padding: 8px 12px; border-radius: 11px;
+           border: 1px solid rgba(255,255,255,0.30); background: rgba(255,255,255,0.12);
+           transition: all .22s; }
+  #clock:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
+  #clock:active { transform: scale(.96); }
+  #clock small { opacity: .6; font-size: 11px; font-weight: 400; }
 
   /* ホイール時刻ピッカー */
   #tpick { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end;
@@ -148,13 +138,11 @@
     </div>
   </div>
 
-  <div id="dock" class="wheel-input">
+  <div id="dock">
     <button id="mode">⇆ 比較</button>
     <input id="datep" type="date">
-    <button id="inputToggle" title="時刻の選び方を切り替え">🎡</button>
     <input id="slider" type="range" min="0" max="1439" step="1" value="720">
-    <span id="clock">現在</span>
-    <button id="timebtn">🕐 現在</button>
+    <button id="clock" title="タップで時刻をホイールで選ぶ">現在</button>
   </div>
 
   <div id="tpick" class="hidden">
@@ -327,26 +315,11 @@ function applyMode(){
 }
 modeBtn.addEventListener('click', ()=>{ compare=!compare; applyMode(); renderAll(); });
 
-/* ===== 時刻コントロール（ホイール ／ スライダー 両対応） ===== */
+/* ===== 時刻コントロール（スライダー＋時刻タップでホイール） ===== */
 let liveMode=true, clockTimer=null, selMin=720;
-const dock=document.getElementById('dock');
-const dateEl=document.getElementById('datep'), timeBtn=document.getElementById('timebtn');
+const dateEl=document.getElementById('datep');
 const slider=document.getElementById('slider'), clockEl=document.getElementById('clock');
-const inputToggle=document.getElementById('inputToggle');
 const tpick=document.getElementById('tpick'), tpNow=document.getElementById('tpNow'), tpDone=document.getElementById('tpDone');
-
-// 入力方式（wheel / slider）— 選択を記憶
-let wheelMode=true;
-try{ const saved=localStorage.getItem('imasora-input'); if(saved) wheelMode=(saved==='wheel'); }catch(e){}
-function applyInputMode(){
-  dock.classList.toggle('wheel-input', wheelMode);
-  inputToggle.textContent = wheelMode ? '🎡' : '🎚';
-  inputToggle.title = wheelMode ? 'ホイール式（タップでスライダーに切替）' : 'スライダー式（タップでホイールに切替）';
-}
-inputToggle.addEventListener('click', ()=>{
-  wheelMode=!wheelMode; applyInputMode();
-  try{ localStorage.setItem('imasora-input', wheelMode?'wheel':'slider'); }catch(e){}
-});
 
 function currentDate(){
   if(liveMode) return new Date();
@@ -355,10 +328,9 @@ function currentDate(){
 function renderAll(){ const d=currentDate(); panels.forEach(p=>renderPanel(p,d)); }
 function ensureTimer(){ if(clockTimer) clearInterval(clockTimer); if(liveMode) clockTimer=setInterval(renderAll,1000); }
 function hhmm(m){ return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
-// 両方の入力UIに現在の状態を反映
+// スライダー右の時刻表示に反映
 function syncControls(){
-  timeBtn.textContent = liveMode ? '🕐 現在' : hhmm(selMin);
-  clockEl.innerHTML   = liveMode ? '現在' : `${hhmm(selMin)} <small>@${panels[0].city.name}</small>`;
+  clockEl.innerHTML = liveMode ? '現在' : hhmm(selMin);
   slider.value = selMin;
 }
 function setLive(){ liveMode=true; dateEl.value=todayYMDStr(panels[0].city.tz); syncControls(); renderAll(); ensureTimer(); }
@@ -403,7 +375,7 @@ function openPicker(){
   requestAnimationFrame(()=>{ wheelH.index=Math.floor(base/60); wheelM.index=base%60; });
 }
 function closePicker(){ tpick.classList.add('hidden'); }
-timeBtn.addEventListener('click', openPicker);
+clockEl.addEventListener('click', openPicker);
 tpDone.addEventListener('click', closePicker);
 tpNow.addEventListener('click', ()=>{ setLive(); closePicker(); });
 tpick.addEventListener('click', e=>{ if(e.target===tpick) closePicker(); });
@@ -423,7 +395,6 @@ function initPanel(p, value){
 initPanel(panels[0], 'p:0');   // 札幌
 initPanel(panels[1], 'p:46');  // 那覇
 applyMode();
-applyInputMode();
 setLive();
 </script>
 </body>
