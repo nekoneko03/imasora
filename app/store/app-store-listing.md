@@ -78,7 +78,7 @@
 
 ## 審査前チェックリスト
 
-- [ ] バンドルIDを自分のものに変更（com.yourname.imasora → 例: com.kaneko.imasora）
+- [ ] バンドルIDを自分のものに変更（jp.kanekoyu.imasora → 例: com.kaneko.imasora）
 - [ ] App Group を実IDで設定し、ウィジェットの現在地連携を確認
 - [ ] 実機で位置情報許可 → 現在地表示 → 地点登録 → ウィジェットの一連の流れを確認
 - [ ] プライバシーポリシーを公開してURLを取得

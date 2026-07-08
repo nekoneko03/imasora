@@ -16,7 +16,7 @@ app/
 └─ README.md
 ```
 
-> ⚠️ `com.yourname.imasora` と App Group `group.com.yourname.imasora` は
+> ⚠️ `jp.kanekoyu.imasora` と App Group `group.com.kanekoyu.imasora.shared` は
 > 自分の Bundle ID に置き換えてください（3ファイル: capacitor.config.json /
 > www/index.html の `APP_GROUP` / ios-widget/*.swift の `APP_GROUP`）。
 
@@ -34,7 +34,7 @@ app/
 ```bash
 cd app
 npm install
-npx cap init "いま空" com.yourname.imasora --web-dir=www   # ← 済ならスキップ
+npx cap init "いま空" jp.kanekoyu.imasora --web-dir=www   # ← 済ならスキップ
 npx cap add ios
 npx cap sync
 npx cap open ios      # Xcode が開く
@@ -58,7 +58,7 @@ plist 追記は不要です（iOS の許可ダイアログが出ます）。
 ## 4. App Group を設定（ウィジェットとのデータ共有）
 
 1. Xcode → App ターゲット → Signing & Capabilities → **+ Capability → App Groups**
-2. `group.com.yourname.imasora` を追加
+2. `group.com.kanekoyu.imasora.shared` を追加
 3. あとで作るウィジェット拡張ターゲットにも **同じ App Group** を追加
 
 アプリは Capacitor Preferences をこの App Group に向けて緯度経度を保存し

@@ -230,16 +230,16 @@
         <p>運営者: 金子 裕亮（個人開発）<br>連絡先: kaneko.yu03@gmail.com<br>所在地: 日本</p>
 
         <h3>不具合報告・ご要望</h3>
-        <p>不具合の報告や機能のご要望は、下のボタンからメールでお送りください。</p>
-        <p><a class="dbtn" style="text-decoration:none;display:inline-flex"
-              href="mailto:kaneko.yu03@gmail.com?subject=%E3%80%90%E3%81%84%E3%81%BE%E3%81%AE%E7%A9%BA%E8%89%B2%E3%80%91%E4%B8%8D%E5%85%B7%E5%90%88%E5%A0%B1%E5%91%8A%E3%83%BB%E3%81%94%E8%A6%81%E6%9C%9B&body=%E7%A8%AE%E5%88%A5%EF%BC%88%E4%B8%8D%E5%85%B7%E5%90%88%2F%E3%81%94%E8%A6%81%E6%9C%9B%EF%BC%89%3A%0A%0A%E5%86%85%E5%AE%B9%3A%0A%0A%E6%A9%9F%E7%A8%AE%E3%83%BBiOS%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%3A">メールを作成</a></p>
+        <p>不具合の報告や機能のご要望は、下のフォームからお送りください。</p>
+        <p><button class="dbtn weblink" data-url="https://forms.gle/zjWXDhymMUnvAgDS9">フォームを開く</button></p>
+        <p style="font-size:12px;opacity:.7">フォームが使えない場合:
+          <a href="mailto:kaneko.yu03@gmail.com?subject=%E3%80%90%E3%81%84%E3%81%BE%E3%81%AE%E7%A9%BA%E8%89%B2%E3%80%91%E4%B8%8D%E5%85%B7%E5%90%88%E5%A0%B1%E5%91%8A%E3%83%BB%E3%81%94%E8%A6%81%E6%9C%9B" style="color:#9cc4ff">メールで送る</a></p>
 
         <h3>ウェブサイト</h3>
         <p style="display:flex;flex-wrap:wrap;gap:8px">
           <button class="dbtn weblink" data-url="https://imasora.vercel.app/terms.html">利用規約</button>
           <button class="dbtn weblink" data-url="https://imasora.vercel.app/privacy.html">プライバシーポリシー</button>
           <button class="dbtn weblink" data-url="https://imasora.vercel.app/about.html">運営者情報</button>
-          <button class="dbtn weblink" data-url="https://imasora.vercel.app/contact.html">ご要望フォーム</button>
         </p>
 
         <p class="in-ver">いまの空色 v1.0.0</p>
@@ -331,7 +331,7 @@ const { sunElevation, refract, skyColors, css } = window.Sky;
 const Cap = window.Capacitor || {};
 const isNative = !!(Cap.isNativePlatform && Cap.isNativePlatform());
 const Plugins = Cap.Plugins || {};
-const APP_GROUP = 'group.com.yourname.imasora'; // ← capacitor.config と Xcode の App Group に合わせる
+const APP_GROUP = 'group.com.kanekoyu.imasora.shared'; // ← capacitor.config と Xcode の App Group に合わせる
 
 function toast(msg, ms = 2600) {
   const t = document.getElementById('toast');
@@ -362,7 +362,20 @@ async function loadPlaces() {
   try { places = raw ? JSON.parse(raw) : []; } catch (e) { places = []; }
   if (!Array.isArray(places)) places = [];
 }
-async function savePlaces() { await Store.set('imasora_places', JSON.stringify(places)); }
+// App Group 共有領域へ書き込む（ウィジェットが読む。Preferences では書けないため WidgetsBridge を使う）
+async function shareToWidget(key, value) {
+  try {
+    if (isNative && Plugins.WidgetsBridgePlugin) {
+      await Plugins.WidgetsBridgePlugin.setItem({ key, value: String(value), group: APP_GROUP });
+    }
+  } catch (e) {}
+}
+async function savePlaces() {
+  await Store.set('imasora_places', JSON.stringify(places));
+  // ウィジェットの「編集」メニューの選択肢と表示を更新
+  await shareToWidget('imasora_places', JSON.stringify(places));
+  try { if (isNative && Plugins.WidgetsBridgePlugin) Plugins.WidgetsBridgePlugin.reloadAllTimelines?.(); } catch (e) {}
+}
 function placeById(id) { return places.find(p => p.id === id) || null; }
 
 /* ===== 都市データ ===== */
@@ -619,13 +632,10 @@ document.getElementById('locBtn').addEventListener('click', () => updateLocation
 /* ===== ウィジェット用にApp Group共有ストレージへ保存 ===== */
 async function saveForWidget(lat, lon, sub) {
   try {
-    if (isNative && Plugins.Preferences) {
-      await Plugins.Preferences.configure({ group: APP_GROUP });
-      await Plugins.Preferences.set({ key: 'imasora_lat', value: String(lat) });
-      await Plugins.Preferences.set({ key: 'imasora_lon', value: String(lon) });
-      await Plugins.Preferences.set({ key: 'imasora_sub', value: sub || '' });
-    }
-    // ウィジェットのタイムラインを再読み込み（プラグインがあれば）
+    await shareToWidget('imasora_lat', lat);
+    await shareToWidget('imasora_lon', lon);
+    await shareToWidget('imasora_sub', sub || '');
+    // ウィジェットのタイムラインを再読み込み
     if (isNative && Plugins.WidgetsBridgePlugin) {
       Plugins.WidgetsBridgePlugin.reloadAllTimelines?.();
     }
@@ -668,7 +678,12 @@ function renderPlaces() {
     go.addEventListener('click', () => showPlace(p));
     const del = document.createElement('button'); del.className = 'sh-del';
     del.innerHTML = '<svg class="ic" style="width:17px;height:17px"><use href="#i-trash"/></svg>';
-    del.addEventListener('click', async () => { places = places.filter(x => x.id !== p.id); await savePlaces(); rebuildSelects(); renderPlaces(); toast('削除しました'); });
+    del.addEventListener('click', async () => {
+      if (!window.confirm(`「${p.name}」を削除しますか？`)) return;
+      places = places.filter(x => x.id !== p.id);
+      await savePlaces(); rebuildSelects(); renderPlaces();
+      toast(`「${p.name}」を削除しました`);
+    });
     row.appendChild(sw); row.appendChild(meta); row.appendChild(go); row.appendChild(del);
     shList.appendChild(row);
   });

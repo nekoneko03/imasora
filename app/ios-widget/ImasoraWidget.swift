@@ -4,7 +4,7 @@
 //  セットアップ:
 //  1. Xcode で File > New > Target > Widget Extension（名前: ImasoraWidget）を追加
 //  2. 生成された雛形の中身をこのファイルで置き換え、SkyMath.swift も同ターゲットに追加
-//  3. アプリ本体・ウィジェット両ターゲットに App Group（例 group.com.yourname.imasora）を追加
+//  3. アプリ本体・ウィジェット両ターゲットに App Group（例 group.com.kanekoyu.imasora.shared）を追加
 //  4. 下の APP_GROUP をその App Group ID に合わせる
 //
 //  データ共有: アプリが Capacitor Preferences（group 設定）で
@@ -14,7 +14,7 @@
 import WidgetKit
 import SwiftUI
 
-private let APP_GROUP = "group.com.yourname.imasora"
+private let APP_GROUP = "group.com.kanekoyu.imasora.shared"
 
 // Capacitor Preferences はキー名に "CapacitorStorage." を前置する
 private func sharedDouble(_ key: String) -> Double? {
