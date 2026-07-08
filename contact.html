@@ -23,7 +23,7 @@
   <button type="submit">メールで送信</button>
 </form>
 
-<p style="margin-top:28px;font-size:13px;color:#8890a8">フォームがうまく動作しない場合は、ka228yu@gmail.com まで直接メールをお送りください。</p>
+<p style="margin-top:28px;font-size:13px;color:#8890a8">フォームがうまく動作しない場合は、kaneko.yu03@gmail.com まで直接メールをお送りください。</p>
 
 <script>
 document.getElementById('f').addEventListener('submit', function (e) {
@@ -33,7 +33,7 @@ document.getElementById('f').addEventListener('submit', function (e) {
   var env = document.getElementById('env').value;
   var subject = '【いまの空色】' + kind;
   var text = '種別: ' + kind + '\n\n内容:\n' + body + (env ? '\n\n環境: ' + env : '');
-  location.href = 'mailto:ka228yu@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
+  location.href = 'mailto:kaneko.yu03@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
 });
 </script>
 

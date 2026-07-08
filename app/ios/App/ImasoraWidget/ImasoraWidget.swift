@@ -1,84 +1,129 @@
-//
 //  ImasoraWidget.swift
-//  ImasoraWidget
+//  いまの空色 - ホーム画面ウィジェット（今の空の色を表示）
 //
-//  Created by 金子裕亮 on 2026/07/08.
-//
+//  データ共有: アプリが Capacitor Preferences（App Group 設定時）で保存した
+//  緯度経度を読み、現在時刻の空の色を自分で計算して描画する。
+//  App Group 未設定の間は東京の空を表示する。
 
 import WidgetKit
 import SwiftUI
 
-struct Provider: TimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), emoji: "😀")
-    }
+private let APP_GROUP = "group.com.yourname.imasora"
 
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let entry = SimpleEntry(date: Date(), emoji: "😀")
-        completion(entry)
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, emoji: "😀")
-            entries.append(entry)
-        }
-
-        let timeline = Timeline(entries: entries, policy: .atEnd)
-        completion(timeline)
-    }
-
-//    func relevances() async -> WidgetRelevances<Void> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
+// Capacitor Preferences はキー名に "CapacitorStorage." を前置する
+private func sharedDouble(_ key: String) -> Double? {
+    guard let d = UserDefaults(suiteName: APP_GROUP) else { return nil }
+    if let v = d.string(forKey: "CapacitorStorage." + key) { return Double(v) }
+    if let v = d.string(forKey: key) { return Double(v) }
+    return nil
+}
+private func sharedString(_ key: String) -> String? {
+    guard let d = UserDefaults(suiteName: APP_GROUP) else { return nil }
+    return d.string(forKey: "CapacitorStorage." + key) ?? d.string(forKey: key)
 }
 
-struct SimpleEntry: TimelineEntry {
+struct SkyEntry: TimelineEntry {
     let date: Date
-    let emoji: String
+    let top: Color
+    let bottom: Color
+    let phase: String
+    let sub: String
+    let timeText: String
 }
 
-struct ImasoraWidgetEntryView : View {
+struct Provider: TimelineProvider {
+    // 東京をデフォルト
+    private let defaultLat = 35.6895, defaultLon = 139.6917
+
+    private func makeEntry(_ date: Date, lat: Double, lon: Double, sub: String) -> SkyEntry {
+        let sky = SkyMath.skyColors(date, lat: lat, lon: lon)
+        let f = DateFormatter(); f.locale = Locale(identifier: "ja_JP"); f.dateFormat = "HH:mm"
+        return SkyEntry(date: date, top: sky.top, bottom: sky.bottom,
+                        phase: sky.phase, sub: sub, timeText: f.string(from: date))
+    }
+
+    func placeholder(in context: Context) -> SkyEntry {
+        makeEntry(Date(), lat: defaultLat, lon: defaultLon, sub: "現在地")
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (SkyEntry) -> Void) {
+        let lat = sharedDouble("imasora_lat") ?? defaultLat
+        let lon = sharedDouble("imasora_lon") ?? defaultLon
+        let sub = sharedString("imasora_sub") ?? "現在地"
+        completion(makeEntry(Date(), lat: lat, lon: lon, sub: sub))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SkyEntry>) -> Void) {
+        let lat = sharedDouble("imasora_lat") ?? defaultLat
+        let lon = sharedDouble("imasora_lon") ?? defaultLon
+        let sub = sharedString("imasora_sub") ?? "現在地"
+
+        // これから3時間、10分刻みで色が変わるエントリを用意
+        var entries: [SkyEntry] = []
+        let now = Date()
+        for step in stride(from: 0, through: 180, by: 10) {
+            let d = now.addingTimeInterval(Double(step) * 60)
+            entries.append(makeEntry(d, lat: lat, lon: lon, sub: sub))
+        }
+        // 3時間後に再読み込み
+        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(180 * 60))))
+    }
+}
+
+struct ImasoraWidgetEntryView: View {
     var entry: Provider.Entry
+    @Environment(\.widgetFamily) var family
+
+    var gradient: LinearGradient {
+        LinearGradient(colors: [entry.top, entry.bottom],
+                       startPoint: .top, endPoint: .bottom)
+    }
 
     var body: some View {
-        VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
-
-            Text("Emoji:")
-            Text(entry.emoji)
+        ZStack(alignment: .bottomLeading) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("いまの空色")
+                    .font(.system(size: family == .systemSmall ? 12 : 14, weight: .heavy))
+                    .kerning(1.2)
+                Spacer()
+                Text(entry.date, style: .time)
+                    .font(.system(size: family == .systemSmall ? 30 : 40, weight: .thin))
+                    .monospacedDigit()
+                Text(entry.phase)
+                    .font(.system(size: 12, weight: .semibold))
+                    .opacity(0.9)
+                if family != .systemSmall {
+                    Text(entry.sub)
+                        .font(.system(size: 10))
+                        .opacity(0.7)
+                        .lineLimit(1)
+                }
+            }
+            .foregroundColor(.white)
+            .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 1)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
     }
 }
 
 struct ImasoraWidget: Widget {
-    let kind: String = "ImasoraWidget"
-
+    let kind = "ImasoraWidget"
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             if #available(iOS 17.0, *) {
                 ImasoraWidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
+                    .containerBackground(for: .widget) {
+                        LinearGradient(colors: [entry.top, entry.bottom],
+                                       startPoint: .top, endPoint: .bottom)
+                    }
             } else {
                 ImasoraWidgetEntryView(entry: entry)
-                    .padding()
-                    .background()
+                    .background(LinearGradient(colors: [entry.top, entry.bottom],
+                                               startPoint: .top, endPoint: .bottom))
             }
         }
-        .configurationDisplayName("My Widget")
-        .description("This is an example widget.")
+        .configurationDisplayName("いまの空色")
+        .description("今の空の色を表示します。")
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
-}
-
-#Preview(as: .systemSmall) {
-    ImasoraWidget()
-} timeline: {
-    SimpleEntry(date: .now, emoji: "😀")
-    SimpleEntry(date: .now, emoji: "🤩")
 }

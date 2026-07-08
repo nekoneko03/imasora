@@ -1,9 +1,5 @@
-//
 //  ImasoraWidgetBundle.swift
-//  ImasoraWidget
-//
-//  Created by 金子裕亮 on 2026/07/08.
-//
+//  いまの空色 - ウィジェットバンドル
 
 import WidgetKit
 import SwiftUI
@@ -12,6 +8,5 @@ import SwiftUI
 struct ImasoraWidgetBundle: WidgetBundle {
     var body: some Widget {
         ImasoraWidget()
-        ImasoraWidgetControl()
     }
 }

@@ -1,0 +1,21 @@
+{
+  "name": "imasora",
+  "version": "1.0.0",
+  "private": true,
+  "description": "いま空 - 現在地の空の色を表示する iOS アプリ",
+  "scripts": {
+    "sync": "cap sync",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/browser": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/preferences": "^6.0.0",
+    "capacitor-widgetsbridge-plugin": "^0.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}

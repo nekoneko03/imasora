@@ -1,0 +1,46 @@
+PODS:
+  - Capacitor (6.2.1):
+    - CapacitorCordova
+  - CapacitorBrowser (6.0.6):
+    - Capacitor
+  - CapacitorCordova (6.2.1)
+  - CapacitorGeolocation (6.1.1):
+    - Capacitor
+  - CapacitorPreferences (6.0.4):
+    - Capacitor
+  - CapacitorWidgetsbridgePlugin (0.1.2):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorGeolocation (from `../../node_modules/@capacitor/geolocation`)"
+  - "CapacitorPreferences (from `../../node_modules/@capacitor/preferences`)"
+  - CapacitorWidgetsbridgePlugin (from `../../node_modules/capacitor-widgetsbridge-plugin`)
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorBrowser:
+    :path: "../../node_modules/@capacitor/browser"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorGeolocation:
+    :path: "../../node_modules/@capacitor/geolocation"
+  CapacitorPreferences:
+    :path: "../../node_modules/@capacitor/preferences"
+  CapacitorWidgetsbridgePlugin:
+    :path: "../../node_modules/capacitor-widgetsbridge-plugin"
+
+SPEC CHECKSUMS:
+  Capacitor: c95400d761e376be9da6be5a05f226c0e865cebf
+  CapacitorBrowser: 825163a1d6adce944ac7b9e3cab101146b5a9df8
+  CapacitorCordova: 8d93e14982f440181be7304aa9559ca631d77fff
+  CapacitorGeolocation: ef657a46a125be74010f4ce57caae173c23204d2
+  CapacitorPreferences: 5848e0691b36b4bb4acc98e481ab56d451578d30
+  CapacitorWidgetsbridgePlugin: 2b25b0ed502849687a3cd4cc63a4409b94119f25
+
+PODFILE CHECKSUM: 1b0b8eadf9f92e80b76bc5265d34cbb47d39e41d
+
+COCOAPODS: 1.17.0

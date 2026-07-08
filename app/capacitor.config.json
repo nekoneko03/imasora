@@ -1,0 +1,9 @@
+{
+  "appId": "com.yourname.imasora",
+  "appName": "いまの空色",
+  "webDir": "www",
+  "backgroundColor": "#05060a",
+  "ios": {
+    "contentInset": "never"
+  }
+}
