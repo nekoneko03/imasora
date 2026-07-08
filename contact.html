@@ -8,33 +8,16 @@
 </head>
 <body>
 <h1>不具合報告・ご要望</h1>
-<p>「いまの空色」の不具合報告や機能のご要望は、以下のフォームからお送りください。送信ボタンを押すと、お使いのメールアプリが起動します。</p>
+<p>ご意見フォームへ移動しています…</p>
+<p>自動で切り替わらない場合は、こちらをタップしてください。</p>
+<p><a href="https://forms.gle/zjWXDhymMUnvAgDS9"><button type="button">フォームを開く</button></a></p>
 
-<form id="f">
-  <label>種別
-    <select id="kind">
-      <option>不具合の報告</option>
-      <option>機能のご要望</option>
-      <option>その他</option>
-    </select>
-  </label>
-  <label>内容<textarea id="body" placeholder="不具合の場合は「どの画面で・何をしたら・どうなったか」を書いていただけると助かります。"></textarea></label>
-  <label>お使いの機種・iOSバージョン（任意）<input id="env" type="text" placeholder="例: iPhone 15 / iOS 26.2"></label>
-  <button type="submit">メールで送信</button>
-</form>
-
-<p style="margin-top:28px;font-size:13px;color:#8890a8">フォームがうまく動作しない場合は、kaneko.yu03@gmail.com まで直接メールをお送りください。</p>
+<p style="margin-top:28px;font-size:13px;color:#8890a8">フォームが利用できない場合は、kaneko.yu03@gmail.com まで直接メールをお送りください。</p>
 
 <script>
-document.getElementById('f').addEventListener('submit', function (e) {
-  e.preventDefault();
-  var kind = document.getElementById('kind').value;
-  var body = document.getElementById('body').value;
-  var env = document.getElementById('env').value;
-  var subject = '【いまの空色】' + kind;
-  var text = '種別: ' + kind + '\n\n内容:\n' + body + (env ? '\n\n環境: ' + env : '');
-  location.href = 'mailto:kaneko.yu03@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
-});
+setTimeout(function () {
+  location.replace('https://forms.gle/zjWXDhymMUnvAgDS9');
+}, 400);
 </script>
 
 <footer>© 2026 いまの空色 ・ <a href="about.html">運営者情報</a> ・ <a href="/">アプリを開く</a></footer>
