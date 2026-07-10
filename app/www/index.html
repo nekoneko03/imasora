@@ -114,6 +114,24 @@
   .in-body p { margin-bottom: 6px; }
   .in-ver { margin-top: 14px; opacity: .5; font-size: 11px; }
 
+  /* 初回ウェルカム（利用規約への同意） */
+  #welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; text-align: center;
+             background: linear-gradient(180deg, #0a1230 0%, #35406e 55%, #b5745a 100%);
+             padding: 36px 28px calc(36px + env(safe-area-inset-bottom)); }
+  #welcome.hidden { display: none; }
+  .wl-name { font-size: 30px; font-weight: 800; letter-spacing: .14em;
+             text-shadow: 0 2px 16px rgba(0,0,0,0.4); }
+  .wl-desc { font-size: 14px; line-height: 2; opacity: .9; margin-top: 14px; max-width: 300px; }
+  .wl-start { margin-top: 34px; border: none; border-radius: 15px; cursor: pointer;
+              font-size: 16px; font-weight: 700; color: #1a2244; padding: 15px 56px;
+              background: linear-gradient(180deg, #ffffff, #dfe6f5);
+              box-shadow: 0 8px 26px rgba(0,0,0,0.35); }
+  .wl-start:active { transform: scale(.97); }
+  .wl-note { font-size: 11px; opacity: .8; margin-top: 16px; line-height: 1.9; max-width: 300px; }
+  .wl-note button { background: none; border: none; padding: 0; color: #cfe0ff;
+                    font-size: 11px; text-decoration: underline; cursor: pointer; }
+
   /* トースト */
   #toast { position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
            bottom: calc(96px + env(safe-area-inset-bottom));
@@ -221,7 +239,7 @@
         <p><strong>位置情報</strong> — 現在地の空の色を計算・表示するために、許可を得たうえで端末の位置情報を利用します。位置情報は端末内でのみ使用し、地名表示のための Apple のサービスへの送信（下記「地名の表示」参照）を除き、外部へ送信・保存することはありません。登録した地点やウィジェット用のデータも端末内にのみ保存されます。許可は iOS の「設定」からいつでも取り消せます。</p>
         <p><strong>地名の表示</strong> — 現在地の地名表示には、マップや天気アプリなど多くの iOS アプリで使われている iOS 標準の逆ジオコーディング機能を使用します。地名への変換のために座標が暗号化されて Apple へ送信されますが、その取り扱いは Apple のプライバシーポリシーに従い、開発者が内容を受け取ることはありません。通信できない環境では送信されず、内蔵の都市リストから最寄りの地名を表示します。</p>
         <p><strong>広告・解析</strong> — 広告、アクセス解析、トラッキングは一切使用していません。アカウント登録も不要です。</p>
-        <p><strong>お問い合わせ時の情報</strong> — フォームやメールでお問い合わせの際に任意でご提供いただいた返信用メールアドレス等は、お問い合わせへの対応のみに使用します。</p>
+        <p><strong>お問い合わせ時の情報</strong> — フォームやメールでお問い合わせの際に任意でご提供いただいた返信用メールアドレスや端末情報（OS のバージョン、機種名等）は、お問い合わせへの対応のみに使用します。</p>
         <p>正式な全文は、下記ウェブサイトの「プライバシーポリシー」をご覧ください。</p>
 
         <h3>利用規約（要旨）</h3>
@@ -319,6 +337,13 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="welcome" class="hidden">
+    <div class="wl-name">いまの空色</div>
+    <p class="wl-desc">いまこの瞬間の空の色を、<br>太陽の位置から計算して表示します。<br>すべての計算は端末の中だけで行われます。</p>
+    <button id="wlStart" class="wl-start">はじめる</button>
+    <p class="wl-note">「はじめる」をタップすると、<button class="weblink" data-url="https://imasora.vercel.app/terms.html">利用規約</button>および<button class="weblink" data-url="https://imasora.vercel.app/privacy.html">プライバシーポリシー</button>に同意したものとみなされます。</p>
   </div>
 
   <div id="toast"></div>
@@ -764,7 +789,20 @@ async function boot() {
   initPanel(panels[1], 'p:12'); // 東京（比較用の初期値）
   applyMode();
   setLive();
-  updateLocation(false);
+  // 初回起動: ウェルカム画面（利用規約への同意）を表示。
+  // 位置情報の許可ダイアログは「はじめる」の後に出す。
+  const agreed = await Store.get('imasora_agreed');
+  if (!agreed) {
+    const wl = document.getElementById('welcome');
+    wl.classList.remove('hidden');
+    document.getElementById('wlStart').addEventListener('click', async () => {
+      wl.classList.add('hidden');
+      await Store.set('imasora_agreed', '1');
+      updateLocation(false);
+    }, { once: true });
+  } else {
+    updateLocation(false);
+  }
 }
 boot();
 </script>
