@@ -107,6 +107,30 @@
              font-family: Georgia, serif; font-style: italic; opacity: .8; }
   #infoBtn:active { transform: scale(.92); }
 
+  /* シェアボタン（ⓘの左隣） */
+  #shareBtn { position: fixed; z-index: 20; top: calc(12px + env(safe-area-inset-top));
+              right: calc(52px + env(safe-area-inset-right));
+              width: 30px; height: 30px; border-radius: 50%;
+              border: 1px solid rgba(255,255,255,0.35); background: rgba(16,18,30,0.35);
+              color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+              -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: .8; }
+  #shareBtn:active { transform: scale(.92); }
+  #shareBtn svg { width: 14px; height: 14px; }
+
+  /* シェアシート */
+  #share { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end;
+           justify-content: center; background: rgba(0,0,0,0.45);
+           -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  #share.hidden { display: none; }
+  .sh-body { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 4px; }
+  #shPrev { width: 168px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
+  .sh-row { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .sh-row input { width: auto; accent-color: #ffd27a; transform: scale(1.2); }
+  #shDo { width: 100%; padding: 13px; border-radius: 14px; border: none; cursor: pointer;
+          background: rgba(255,210,122,0.9); color: #1a1405; font-size: 15px; font-weight: 800; }
+  #shDo:active { transform: scale(.98); }
+
   /* 情報シート */
   #info { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end;
           justify-content: center; background: rgba(0,0,0,0.45);
@@ -246,6 +270,23 @@
 <body>
   <div id="appname">いまの空色</div>
   <button id="infoBtn" aria-label="アプリ情報">i</button>
+  <button id="shareBtn" aria-label="いまの空をシェア">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12v7A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-7"/><path d="M12 14V3.5"/><path d="M8 7l4-4 4 4"/></svg>
+  </button>
+
+  <div id="share" class="hidden">
+    <div class="in-card">
+      <div class="in-head">
+        <h2>いまの空をシェア</h2>
+        <button id="shClose">閉じる</button>
+      </div>
+      <div class="sh-body">
+        <canvas id="shPrev" width="1080" height="1920"></canvas>
+        <label class="sh-row"><input type="checkbox" id="shPlace">地名を表示する</label>
+        <button id="shDo">シェア</button>
+      </div>
+    </div>
+  </div>
 
   <div id="info" class="hidden">
     <div class="in-card">
@@ -843,6 +884,77 @@ function showPlace(p) {
 function openSheet() { renderPlaces(); resetAddUI(); sheet.classList.remove('hidden'); }
 function closeSheet() { sheet.classList.add('hidden'); resetAddUI(); }
 function resetAddUI() { addCitySel.selectedIndex = -1; }
+
+/* ===== シェア（いまの空をカード画像にしてOSのシェアシートへ） ===== */
+const shareEl = document.getElementById('share');
+const shPrev = document.getElementById('shPrev');
+const shPlace = document.getElementById('shPlace');
+shPlace.checked = (localStorage.getItem('imasora_share_place') || '1') === '1';
+
+function shareInfo() {
+  const c = panels[0] && panels[0].city;
+  if (!c) return null;
+  const date = currentDate();
+  const h = refract(sunElevation(date, c.lat, c.lon));
+  return { c, date, h, sky: skyColors(h) };
+}
+function drawShareCard(canvas, withPlace) {
+  const d = shareInfo();
+  if (!d) return false;
+  const W = 1080, H = 1920;
+  canvas.width = W; canvas.height = H;
+  const x = canvas.getContext('2d');
+  const gr = x.createLinearGradient(0, 0, 0, H);
+  gr.addColorStop(0, css(d.sky.top));
+  gr.addColorStop(1, css(d.sky.bottom));
+  x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  x.textAlign = 'center'; x.fillStyle = '#fff';
+  x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowBlur = 22;
+  const F = (w, s) => `${w} ${s}px -apple-system, "Hiragino Sans", sans-serif`;
+  const dateStr = new Intl.DateTimeFormat('ja-JP', { timeZone: d.c.tz, year: 'numeric', month: 'long', day: 'numeric' }).format(d.date);
+  x.globalAlpha = .85; x.font = F(600, 40); x.fillText(dateStr, W / 2, 690);
+  if (withPlace) {
+    x.globalAlpha = 1; x.font = F(700, 62); x.fillText(d.c.name, W / 2, 800);
+    if (d.c.sub) { x.globalAlpha = .8; x.font = F(500, 34); x.fillText(d.c.sub, W / 2, 856); }
+  }
+  x.globalAlpha = 1; x.font = F(200, 196);
+  x.fillText(localTimeStr(d.date, d.c.tz), W / 2, 1080);
+  const lx = d.sky.lux >= 100 ? Math.round(d.sky.lux).toLocaleString() : d.sky.lux >= 1 ? d.sky.lux.toFixed(1) : d.sky.lux.toFixed(3);
+  x.globalAlpha = .9; x.font = F(500, 46); x.fillText(`約 ${lx} lux`, W / 2, 1170);
+  x.globalAlpha = .85; x.font = F(500, 42); x.fillText(`${d.sky.phase}・高度 ${d.h.toFixed(1)}°`, W / 2, 1232);
+  x.globalAlpha = .95; x.font = F(800, 44); x.fillText('いまの空色', W / 2, 1780);
+  x.globalAlpha = .7; x.font = F(500, 32); x.fillText('imasora.vercel.app', W / 2, 1832);
+  x.globalAlpha = 1;
+  return true;
+}
+function openShare() {
+  if (!drawShareCard(shPrev, shPlace.checked)) { toast('地点を取得しています…'); return; }
+  shareEl.classList.remove('hidden');
+}
+async function doShare() {
+  const cv = document.createElement('canvas');
+  if (!drawShareCard(cv, shPlace.checked)) return;
+  const dataUrl = cv.toDataURL('image/png');
+  const text = '#いまの空色 https://imasora.vercel.app';
+  try {
+    if (isNative && Plugins.Filesystem && Plugins.Share) {
+      const w = await Plugins.Filesystem.writeFile({ path: `imasora-share.png`, data: dataUrl.split(',')[1], directory: 'CACHE' });
+      await Plugins.Share.share({ text, files: [w.uri] });
+    } else if (navigator.share) {
+      const blob = await (await fetch(dataUrl)).blob();
+      await navigator.share({ files: [new File([blob], 'imasora.png', { type: 'image/png' })], text });
+    } else { toast('この環境ではシェアできません'); return; }
+    shareEl.classList.add('hidden');
+  } catch (e) { /* ユーザーがキャンセルした場合は何もしない */ }
+}
+document.getElementById('shareBtn').addEventListener('click', openShare);
+document.getElementById('shClose').addEventListener('click', () => shareEl.classList.add('hidden'));
+shareEl.addEventListener('click', e => { if (e.target === shareEl) shareEl.classList.add('hidden'); });
+shPlace.addEventListener('change', () => {
+  localStorage.setItem('imasora_share_place', shPlace.checked ? '1' : '0');
+  drawShareCard(shPrev, shPlace.checked);
+});
+document.getElementById('shDo').addEventListener('click', doShare);
 
 /* 情報シート */
 const infoEl = document.getElementById('info');
