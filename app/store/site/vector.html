@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>太陽高度の公式の導出 - いまの空色</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .lead { opacity: .9; }
+  .formula { background: #141830; border: 1px solid #333a55; border-radius: 10px;
+             padding: 12px 16px; margin: 12px 0; font-size: 14px; line-height: 2;
+             overflow-x: auto; letter-spacing: 0.02em; }
+  .box { background: rgba(74,111,181,0.12); border: 1px solid #4a6fb5; border-radius: 10px;
+         padding: 12px 16px; margin: 12px 0; font-size: 14px; }
+  .note { color: #8890a8; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>太陽高度の公式の導出</h1>
+<p class="lead"><a href="engine.html">計算の詳細</a>で使ったこの公式を、高校数学の「空間ベクトルの内積」だけで導きます。</p>
+<div class="formula">
+sin h = sin φ · sin δ + cos φ · cos δ · cos H
+</div>
+<p>使う道具は3つだけ。①空間の点を (x, y, z) で表すこと、②単位ベクトル同士の内積がなす角の cos になること（a⃗·b⃗ = cos θ）、③三角関数。それぞれの記号は、φ = あなたの緯度、δ = 太陽の赤緯（太陽の真下の地点の緯度）、H = 時角（太陽が真南からズレている角度）です。</p>
+
+<h2>方針</h2>
+<p>太陽の高度 h は「地平線から太陽まで」の角度です。これを直接測る代わりに、<strong>「天頂（真上）方向」と「太陽方向」のなす角 θ</strong> を考えます。太陽が真上にあれば θ = 0° で h = 90°、地平線上なら θ = 90° で h = 0°。つまり</p>
+<div class="formula">
+h = 90° − θ　→　sin h = sin(90° − θ) = cos θ
+</div>
+<p>そして、単位ベクトルどうしの内積はなす角の cos そのものです。だから<strong>「天頂方向の単位ベクトル」と「太陽方向の単位ベクトル」を作って内積を取れば、それがそのまま sin h</strong> になります。あとはベクトルを成分で書くだけです。</p>
+
+<h2>座標系を決める</h2>
+<p>地球の中心を原点に、次のような座標を取ります:</p>
+<ul>
+<li><strong>z軸</strong> = 自転軸の北極方向</li>
+<li><strong>x軸</strong> = 赤道面のうち、<strong>あなたの真南の空につながる方向</strong>（あなたのいる経線が赤道を横切る点の方向)</li>
+<li><strong>y軸</strong> = 右手系になるように残りの方向</li>
+</ul>
+<p>x軸を「自分の経線」に合わせるのがこの導出のコツです。こうすると経度が式から消えて、時角 H だけが残ります。</p>
+
+<h2>2つのベクトルを成分で書く</h2>
+<p><strong>天頂方向 n⃗</strong> — 緯度 φ にいるあなたの「真上」は、地球の中心からあなたへ向かう方向です。あなたは x-z 平面上（自分の経線上）にいて、赤道から角度 φ だけ北に上がった位置なので:</p>
+<div class="formula">
+n⃗ = ( cos φ, 0, sin φ )
+</div>
+<p><strong>太陽方向 s⃗</strong> — 太陽は赤緯 δ（z 方向の高さが sin δ、赤道面への影の長さが cos δ）にあり、その影は x軸（あなたの真南）から時角 H だけ回った方向を向いています。半径1の球面上の点を角度で表す、いつもの書き方で:</p>
+<div class="formula">
+s⃗ = ( cos δ · cos H, cos δ · sin H, sin δ )
+</div>
+<p class="note">緯度・経度から地球上の位置を (x, y, z) にする変換と同じ形です。「高さ方向は sin、水平面での回転は cos × (cos, sin)」と覚えると迷いません。</p>
+
+<h2>内積を取る</h2>
+<p>どちらも長さ1のベクトルなので、内積がそのまま cos θ です:</p>
+<div class="formula">
+cos θ = n⃗ · s⃗<br>
+&nbsp;&nbsp;= (cos φ)(cos δ · cos H) + (0)(cos δ · sin H) + (sin φ)(sin δ)<br>
+&nbsp;&nbsp;= cos φ · cos δ · cos H + sin φ · sin δ
+</div>
+<p>最初に確認した sin h = cos θ を使えば:</p>
+<div class="formula">
+<strong>sin h = sin φ · sin δ + cos φ · cos δ · cos H</strong>
+</div>
+<p>導出はこれだけです。y 成分がゼロと掛かって消えるのは、x軸を自分の経線に合わせたおかげ。「球面三角法の公式」という名前がついていますが、正体は<strong>内積の成分計算1行</strong>でした。</p>
+
+<div class="box">
+<strong>検算:</strong> 南中（H = 0）で cos H = 1 とすると sin h = sin φ sin δ + cos φ cos δ = cos(φ − δ)、つまり h = 90° − (φ − δ)。夏至の大阪（φ = 34.7°、δ = 23.4°）なら h ≒ 78° で、理科の教科書の値と一致します。真夜中（H = 180°）なら cos H = −1 で高度は最小になります。
+</div>
+
+<h2>この導出で使った近似</h2>
+<p>2つだけ、暗黙の近似があります。①地球を完全な球とみなす（実際は赤道方向にわずかに膨らんだ回転楕円体。緯度の定義に最大0.2°ほどの差が出ますが、空の色には影響しません）。②太陽を無限に遠い光源とみなし、「地球の中心から見た太陽の方向」と「あなたから見た太陽の方向」を同じとする（太陽までの距離は地球の半径の約23,000倍なので、この差は最大でも0.002°程度です）。</p>
+
+<footer>© 2026 いまの空色 ・ <a href="engine.html">計算の詳細</a> ・ <a href="tips.html">空の豆知識</a> ・ <a href="faq.html">よくある質問</a></footer>
+</body>
+</html>
