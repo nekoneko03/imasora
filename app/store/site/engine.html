@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>計算の詳細 - いまの空色</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .lead { opacity: .9; }
+  .formula { background: #141830; border: 1px solid #333a55; border-radius: 10px;
+             padding: 12px 16px; margin: 12px 0; font-size: 14px; line-height: 2;
+             overflow-x: auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .note { color: #8890a8; font-size: 13px; }
+  table.stops td { padding: 6px 10px; font-size: 13px; }
+  .sw { display: inline-block; width: 38px; height: 20px; border-radius: 5px;
+        vertical-align: middle; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+</style>
+</head>
+<body>
+<h1>計算の詳細</h1>
+<p class="lead">「いまの空色」が空の色を求める計算の、数式レベルの解説です。概要は<a href="tips.html">空の豆知識</a>をご覧ください。すべての計算は端末内で完結し、外部データは使いません。</p>
+
+<h2>1. 太陽高度</h2>
+<p>天文年鑑（Astronomical Almanac）の簡易太陽位置式を使っています。J2000.0 元期（2000年1月1日12時UT）からの経過日数を d とすると:</p>
+<div class="formula">
+g = 357.529 + 0.98560028 d　（平均近点角）<br>
+q = 280.459 + 0.98564736 d　（平均黄経）<br>
+L = q + 1.915 sin g + 0.020 sin 2g　（視黄経）<br>
+ε = 23.439 − 0.00000036 d　（黄道傾斜角）
+</div>
+<p>視黄経 L と黄道傾斜角 ε から太陽の赤経 α・赤緯 δ を求め、グリニッジ恒星時 GMST と経度から時角 H を出します:</p>
+<div class="formula">
+α = atan2(cos ε · sin L, cos L)<br>
+δ = asin(sin ε · sin L)<br>
+GMST = 280.46061837 + 360.98564736629 d<br>
+H = GMST + 経度 − α
+</div>
+<p>最後に、緯度 φ と合わせて高度 h が決まります:</p>
+<div class="formula">
+sin h = sin φ · sin δ + cos φ · cos δ · cos H
+</div>
+<p class="note">この簡易式の精度は太陽位置で 0.01° 程度。本アプリの用途（色とフェーズの決定）には十分です。</p>
+
+<h2>2. 大気差（見かけの高度への補正）</h2>
+<p>地平線付近では大気の屈折で太陽が浮き上がって見えるため、ベネットの式（Bennett, 1982）で幾何学的高度を見かけの高度に補正します。R の単位は分角です:</p>
+<div class="formula">
+R = 1 / tan( h + 7.31 / (h + 4.4) )<br>
+h<sub>見かけ</sub> = h + R / 60
+</div>
+<p class="note">地平線での補正はおよそ 0.5°（太陽の視直径ぶん）。h &lt; −1° では補正を打ち切ります。</p>
+
+<h2>3. 照度（lux）モデル</h2>
+<p>太陽高度と快晴時の地上水平面照度の関係を、2つの領域に分けて近似しています。</p>
+<p>太陽が高いとき（h ≥ 3°）:</p>
+<div class="formula">
+E = 133800 × sin(h)<sup>1.15</sup>　[lux]
+</div>
+<p>薄明のとき（−18° &lt; h &lt; 3°）は、log<sub>10</sub>E を高度に対する折れ線で補間します:</p>
+<table class="stops">
+  <tr><td class="num">h = 3°</td><td class="num">log₁₀E = 3.65</td><td>約 4,500 lux</td></tr>
+  <tr><td class="num">0°</td><td class="num">2.60</td><td>約 400 lux</td></tr>
+  <tr><td class="num">−6°</td><td class="num">0.53</td><td>約 3.4 lux（市民薄明の終わり）</td></tr>
+  <tr><td class="num">−12°</td><td class="num">−2.10</td><td>約 0.008 lux（航海薄明の終わり）</td></tr>
+  <tr><td class="num">−18°</td><td class="num">−3.22</td><td>約 0.0006 lux（星明かりの夜空）</td></tr>
+</table>
+<p>照度は真昼から星空まで8桁変化するため、画面の明度 B は log₁₀E を最小〜最大で 0〜1 に正規化した値を使います。人間の明るさ感覚が対数的であることとも整合します。</p>
+
+<h2>4. 色の合成</h2>
+<p>色は「色相」と「明るさ」を分けて扱います。太陽高度ごとに画面上端・下端の基準色（0〜1 の RGB）を定義したテーブルを持ち、間の高度は線形補間します:</p>
+<table class="stops">
+  <tr><td class="num">−18°</td><td>夜</td><td><span class="sw" style="background:rgb(15,26,77)"></span></td><td><span class="sw" style="background:rgb(23,33,87)"></span></td></tr>
+  <tr><td class="num">−12°</td><td>天文薄明</td><td><span class="sw" style="background:rgb(26,41,107)"></span></td><td><span class="sw" style="background:rgb(51,56,128)"></span></td></tr>
+  <tr><td class="num">−8°</td><td>航海薄明</td><td><span class="sw" style="background:rgb(51,71,158)"></span></td><td><span class="sw" style="background:rgb(122,92,168)"></span></td></tr>
+  <tr><td class="num">−4°</td><td>市民薄明</td><td><span class="sw" style="background:rgb(89,102,191)"></span></td><td><span class="sw" style="background:rgb(255,133,117)"></span></td></tr>
+  <tr><td class="num">0°</td><td>日の出/日の入り</td><td><span class="sw" style="background:rgb(115,140,219)"></span></td><td><span class="sw" style="background:rgb(255,158,89)"></span></td></tr>
+  <tr><td class="num">3°</td><td>ゴールデンアワー</td><td><span class="sw" style="background:rgb(115,161,245)"></span></td><td><span class="sw" style="background:rgb(255,199,140)"></span></td></tr>
+  <tr><td class="num">10°</td><td>朝夕</td><td><span class="sw" style="background:rgb(107,168,250)"></span></td><td><span class="sw" style="background:rgb(191,219,255)"></span></td></tr>
+  <tr><td class="num">30°</td><td>昼</td><td><span class="sw" style="background:rgb(77,140,255)"></span></td><td><span class="sw" style="background:rgb(153,204,255)"></span></td></tr>
+  <tr><td class="num">60°</td><td>真昼</td><td><span class="sw" style="background:rgb(66,128,255)"></span></td><td><span class="sw" style="background:rgb(140,191,255)"></span></td></tr>
+</table>
+<p class="note">見本は基準色をそのまま表示したもの（明度 B = 1 相当）。実際の画面では明度が掛かります。</p>
+<p>最終的な表示色は、基準色 C に明度 B を掛け、夜でも真っ黒にならないよう最小の環境光（RGB でおよそ 5, 7, 18）を足したものです:</p>
+<div class="formula">
+表示色 = 環境光 + C × B × 255
+</div>
+<p>フェーズ名（「市民薄明」など）は、現在の高度に最も近い側のテーブル行から決まります。</p>
+
+<h2>5. ゴールデンアワーなどの時刻の求め方</h2>
+<p>「この場所の今日のゴールデンアワーは何時か」は、逆算ではなく走査で求めています。その日の0時から24時まで1分刻みで高度を計算し、フェーズの境界（高度がしきい値をまたぐ時刻)を検出する方式です。単純ですが、極地の白夜・極夜のような「境界が存在しない日」も自然に扱えます。</p>
+
+<h2>6. タイムゾーン</h2>
+<p>都市ごとの時刻は IANA タイムゾーンデータベース（Asia/Tokyo など）に基づいて現地時間と UTC を相互変換しています。夏時間も自動で反映されます。太陽位置の計算自体は常に UTC で行うため、時差の影響を受けません。</p>
+
+<h2>このモデルが考慮していないもの</h2>
+<p>雲・エアロゾル（黄砂や煙霧）・光害・標高・地形による遮蔽・月明かりは考慮していません。表示されるのは「快晴・海面高度・遮るもののない地平線」を仮定した理論値です。だからこそ、通信なしで世界中のどの場所・どの時刻の空も描くことができます。</p>
+
+<footer>© 2026 いまの空色 ・ <a href="tips.html">空の豆知識</a> ・ <a href="faq.html">よくある質問</a> ・ <a href="about.html">運営者情報</a></footer>
+</body>
+</html>
