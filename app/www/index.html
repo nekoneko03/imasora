@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>いまの空色</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-user-select: none; user-select: none;      /* テキスト選択を無効化 */
+      -webkit-touch-callout: none;                        /* 長押しメニューを無効化 */
+      -webkit-tap-highlight-color: transparent; }         /* タップ時の灰色ハイライトも消す */
   html, body { width: 100%; height: 100%; overflow: hidden; background: #05060a; }
   body { font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif; color: #fff;
          -webkit-font-smoothing: antialiased;
@@ -66,10 +69,19 @@
   .dbtn:hover { background: rgba(255,255,255,0.22); }
   .dbtn:active { transform: scale(.95); }
   .dbtn.on { background: rgba(255,210,122,0.28); border-color: rgba(255,210,122,0.7); color: #ffe6b0; }
-  #slider { flex: 1; min-width: 120px; -webkit-appearance: none; appearance: none; height: 5px;
+  /* スライダー: 中央=現在。過去(左)・未来(右)へ±12時間 */
+  .sliderwrap { position: relative; flex: 1; min-width: 120px; display: flex; align-items: center; }
+  .sliderwrap::before { content: ''; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%); width: 2px; height: 15px; border-radius: 1px;
+    background: rgba(255,255,255,0.9); pointer-events: none; z-index: 1; }
+  #slider { width: 100%; -webkit-appearance: none; appearance: none; height: 5px;
+            pointer-events: none; /* 入力は #sliderTouch が受け、これは表示専用 */
             border-radius: 5px; outline: none;
-            background: linear-gradient(90deg, rgba(30,40,90,.9), rgba(120,150,220,.9),
-                        rgba(255,200,140,.95), rgba(120,90,150,.9), rgba(20,24,50,.95)); }
+            background: linear-gradient(90deg, rgba(20,24,50,.95), rgba(90,110,180,.9),
+                        rgba(235,240,255,.95), rgba(90,110,180,.9), rgba(20,24,50,.95)); }
+  /* 透明タッチ層: ネイティブのスライダー操作と競合しないよう入力を一手に引き受ける */
+  #sliderTouch { position: absolute; left: 0; right: 0; top: -12px; bottom: -12px;
+                 z-index: 2; touch-action: none; }
   #slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #fff, #dfe4ef);
     box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.14); cursor: pointer; }
@@ -113,6 +125,16 @@
   .in-body h3 { font-size: 13px; margin: 14px 0 4px; color: #9cc4ff; }
   .in-body p { margin-bottom: 6px; }
   .in-ver { margin-top: 14px; opacity: .5; font-size: 11px; }
+  /* 上部の大きなメニューカード */
+  .in-link { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+             padding: 13px 15px; margin-bottom: 9px; border-radius: 14px; cursor: pointer;
+             border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08);
+             color: #fff; font: inherit; }
+  .in-link:active { transform: scale(.98); }
+  .in-link .t { flex: 1; min-width: 0; }
+  .in-link .t b { display: block; font-size: 14.5px; }
+  .in-link .t span { display: block; font-size: 11.5px; opacity: .65; margin-top: 2px; line-height: 1.5; }
+  .in-link .chev { opacity: .45; font-size: 17px; }
 
   /* 初回ウェルカム（利用規約への同意） */
   #welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
@@ -232,7 +254,20 @@
         <button id="inClose">閉じる</button>
       </div>
       <div class="in-body">
-        <p>「いまの空色」は、緯度・経度と時刻から太陽の高度を計算し、空の色を描き出すアプリです。すべての計算は端末の中だけで行われます。</p>
+        <button class="in-link weblink" data-url="https://imasora.vercel.app/tips.html">
+          <div class="t"><b>空の豆知識</b><span>市民薄明・ゴールデンアワーとは？ 空の色と明るさのはなし</span></div>
+          <div class="chev">›</div>
+        </button>
+        <button class="in-link weblink" data-url="https://imasora.vercel.app/faq.html">
+          <div class="t"><b>よくある質問</b><span>実際の空と色が違う？ ウィジェットの地点の変え方は？</span></div>
+          <div class="chev">›</div>
+        </button>
+        <button class="in-link weblink" data-url="https://forms.gle/zjWXDhymMUnvAgDS9">
+          <div class="t"><b>不具合報告・ご要望</b><span>気づいたこと、ほしい機能があれば教えてください</span></div>
+          <div class="chev">›</div>
+        </button>
+
+        <p style="margin-top:8px">「いまの空色」は、緯度・経度と時刻から太陽の高度を計算し、空の色を描き出すアプリです。すべての計算は端末の中だけで行われます。</p>
 
         <h3>プライバシーポリシー（要旨）</h3>
         <p><strong>本アプリは、利用者の個人情報を収集しません。</strong>開発者は利用者のデータを取得・保存するサーバーを有しておらず、開発者が利用者の情報を受け取ることはありません。</p>
@@ -248,16 +283,11 @@
         <h3>運営者情報</h3>
         <p>運営者: 金子 裕亮（個人開発）<br>連絡先: kaneko.yu03@gmail.com<br>所在地: 日本</p>
 
-        <h3>不具合報告・ご要望</h3>
-        <p>不具合の報告や機能のご要望は、下のフォームからお送りください。</p>
-        <p><button class="dbtn weblink" data-url="https://forms.gle/zjWXDhymMUnvAgDS9">フォームを開く</button></p>
         <p style="font-size:12px;opacity:.7">フォームが使えない場合:
           <a href="mailto:kaneko.yu03@gmail.com?subject=%E3%80%90%E3%81%84%E3%81%BE%E3%81%AE%E7%A9%BA%E8%89%B2%E3%80%91%E4%B8%8D%E5%85%B7%E5%90%88%E5%A0%B1%E5%91%8A%E3%83%BB%E3%81%94%E8%A6%81%E6%9C%9B&body=%E2%96%A0%E7%A8%AE%E5%88%A5%EF%BC%88%E3%81%84%E3%81%9A%E3%82%8C%E3%81%8B%E3%82%92%E6%AE%8B%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%EF%BC%89%0A%E4%B8%8D%E5%85%B7%E5%90%88%E3%81%AE%E5%A0%B1%E5%91%8A%20/%20%E6%A9%9F%E8%83%BD%E3%81%AE%E3%81%94%E8%A6%81%E6%9C%9B%20/%20%E3%81%9D%E3%81%AE%E4%BB%96%0A%0A%E2%96%A0%E5%86%85%E5%AE%B9%0A%EF%BC%88%E4%B8%8D%E5%85%B7%E5%90%88%E3%81%AE%E5%A0%B4%E5%90%88%E3%81%AF%E3%80%8C%E3%81%A9%E3%81%AE%E7%94%BB%E9%9D%A2%E3%81%A7%E3%83%BB%E4%BD%95%E3%82%92%E3%81%97%E3%81%9F%E3%82%89%E3%83%BB%E3%81%A9%E3%81%86%E3%81%AA%E3%81%A3%E3%81%9F%E3%81%8B%E3%80%8D%E3%82%92%E3%81%94%E8%A8%98%E5%85%A5%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%EF%BC%89%0A%0A%0A%E2%96%A0%E3%81%8A%E4%BD%BF%E3%81%84%E3%81%AE%E6%A9%9F%E7%A8%AE%E3%83%BBiOS%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%EF%BC%88%E4%BB%BB%E6%84%8F%EF%BC%89%0A%E4%BE%8B%3A%20iPhone%2015%20/%20iOS%2026.2%0A" style="color:#9cc4ff">メールで送る</a></p>
 
-        <h3>ウェブサイト</h3>
+        <h3>規約・ポリシー（全文）</h3>
         <p style="display:flex;flex-wrap:wrap;gap:8px">
-          <button class="dbtn weblink" data-url="https://imasora.vercel.app/tips.html">空の豆知識</button>
-          <button class="dbtn weblink" data-url="https://imasora.vercel.app/faq.html">よくある質問</button>
           <button class="dbtn weblink" data-url="https://imasora.vercel.app/terms.html">利用規約</button>
           <button class="dbtn weblink" data-url="https://imasora.vercel.app/privacy.html">プライバシーポリシー</button>
           <button class="dbtn weblink" data-url="https://imasora.vercel.app/about.html">運営者情報</button>
@@ -300,7 +330,7 @@
     <button id="placesBtn" class="dbtn"><svg class="ic"><use href="#i-bookmark"/></svg>地点登録</button>
     <button id="mode" class="dbtn"><svg class="ic"><use href="#i-compare"/></svg>比較</button>
     <input id="datep" type="date" aria-label="日付をえらぶ">
-    <input id="slider" type="range" min="0" max="1439" step="1" value="720">
+    <div class="sliderwrap"><input id="slider" type="range" min="-1000" max="1000" step="1" value="0" aria-label="現在からの時間" tabindex="-1"><div id="sliderTouch"></div></div>
     <button id="clock" class="dbtn" title="タップして時刻をえらぶ">--:--</button>
     <button id="liveBtn" class="dbtn">現在</button>
   </div>
@@ -537,24 +567,55 @@ function currentDate() {
 function renderAll() { const d = currentDate(); panels.forEach(p => renderPanel(p, d)); }
 function hhmm(m) { return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
 function nowMinutes() { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+
+/* スライダーは「現在からのオフセット」式: 中央=現在、±12時間。
+   3乗カーブで中央付近ほど細かい（中央付近≒1分未満/目盛り、端≒4分/目盛り） */
+const SLIDER_RANGE = 720; // ±12時間（分）
+const clampNum = (v, a, b) => Math.max(a, Math.min(b, v));
+function rawToOffset(raw) {
+  const v = raw / 1000;
+  return Math.sign(v) * Math.pow(Math.abs(v), 3) * SLIDER_RANGE;
+}
+function offsetToRaw(off) {
+  const o = clampNum(off, -SLIDER_RANGE, SLIDER_RANGE) / SLIDER_RANGE;
+  return Math.round(Math.sign(o) * Math.pow(Math.abs(o), 1 / 3) * 1000);
+}
+/* スライダーの基準点:
+   'now'  = 中央が現在（今日・ライブ時。±12hで日付またぎあり）
+   'noon' = 中央がその日の正午（日付指定時。0時〜24時、日付固定） */
+let sliderAnchor = 'now';
+function applySliderRaw(raw) {
+  enterManual();
+  if (sliderAnchor === 'noon') {
+    selMin = clampNum(Math.round(720 + rawToOffset(raw)), 0, 1439);
+  } else {
+    const t = new Date(Date.now() + rawToOffset(raw) * 60000);
+    dateEl.value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    selMin = t.getHours() * 60 + t.getMinutes();
+  }
+  syncControls(); renderAll();
+}
 function syncControls() {
   if (liveMode) selMin = nowMinutes();
   clockEl.textContent = hhmm(selMin);
-  slider.value = selMin;
+  if (liveMode) slider.value = 0;
+  else if (sliderAnchor === 'noon') slider.value = offsetToRaw(selMin - 720);
+  else slider.value = offsetToRaw((currentDate() - Date.now()) / 60000);
   liveBtn.classList.toggle('on', liveMode);
 }
 function ensureTimer() {
   if (clockTimer) clearInterval(clockTimer);
   if (liveMode) clockTimer = setInterval(() => { syncControls(); renderAll(); }, 1000);
 }
-function setLive() { liveMode = true; dateEl.value = todayStr(); syncControls(); renderAll(); ensureTimer(); }
+function setLive() { liveMode = true; sliderAnchor = 'now'; dateEl.value = todayStr(); syncControls(); renderAll(); ensureTimer(); }
 function enterManual() { liveMode = false; if (clockTimer) clearInterval(clockTimer); liveBtn.classList.remove('on'); }
-slider.addEventListener('input', () => { enterManual(); selMin = +slider.value; syncControls(); renderAll(); });
 liveBtn.addEventListener('click', setLive);
 dateEl.addEventListener('change', () => {
-  if (!dateEl.value) { setLive(); return; }
-  // 日付を選んだら手動モードへ（「現在」だった場合は正午から）
-  if (liveMode) { enterManual(); selMin = 720; }
+  if (!dateEl.value || dateEl.value === todayStr()) { setLive(); return; } // 今日を選び直したら現在に戻る
+  // 別の日付を選んだら: スライダーは正午センターに切り替え
+  sliderAnchor = 'noon';
+  enterManual();
+  selMin = 720;
   syncControls(); renderAll();
 });
 
@@ -598,6 +659,36 @@ function closePicker() { tpick.classList.add('hidden'); }
 clockEl.addEventListener('click', openPicker);
 tpDone.addEventListener('click', closePicker);
 tpick.addEventListener('click', e => { if (e.target === tpick) closePicker(); });
+
+/* --- スライダー操作（透明タッチ層で全入力を受ける）---
+   ネイティブのスライダー操作とは競合しない。マウス・タッチ共通。
+   ドラッグ中に指を上下に離すほど感度が下がる（3乗カーブと重ねがけ可能） */
+(() => {
+  const touchEl = document.getElementById('sliderTouch');
+  let st = null, hinted = false;
+  touchEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const rect = slider.getBoundingClientRect();
+    const raw = clampNum(Math.round((e.clientX - rect.left) / rect.width * 2000 - 1000), -1000, 1000);
+    st = { lastX: e.clientX, y0: e.clientY, val: raw };
+    try { touchEl.setPointerCapture(e.pointerId); } catch (err) {}
+    applySliderRaw(raw);
+    if (!hinted && e.pointerType === 'touch') { hinted = true; toast('指を上下にずらすとさらに微調整できます'); }
+  });
+  touchEl.addEventListener('pointermove', e => {
+    if (!st) return;
+    e.preventDefault();
+    const rect = slider.getBoundingClientRect();
+    const dy = Math.abs(e.clientY - st.y0);
+    const sens = dy < 35 ? 1 : dy < 80 ? 0.25 : 0.08;
+    st.val = clampNum(st.val + (e.clientX - st.lastX) / rect.width * 2000 * sens, -1000, 1000);
+    st.lastX = e.clientX;
+    applySliderRaw(Math.round(st.val));
+  });
+  const endScrub = () => { st = null; };
+  touchEl.addEventListener('pointerup', endScrub);
+  touchEl.addEventListener('pointercancel', endScrub);
+})();
 
 /* ===== 現在地取得 ===== */
 async function getPosition() {
