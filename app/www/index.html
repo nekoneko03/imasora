@@ -515,6 +515,34 @@ function todayMinutesInTz(tz) {
   const s = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(new Date());
   const m = /(\d{2}):(\d{2})/.exec(s); return m ? +m[1] * 60 + +m[2] : 720;
 }
+/* 指定タイムゾーンでの年月日・時分に分解 */
+function tzParts(date, tz) {
+  const dtf = new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const o = {}; dtf.formatToParts(date).forEach(p => { o[p.type] = p.value; });
+  return { y: +o.year, mo: +o.month, d: +o.day, h: +o.hour % 24, mi: +o.minute, s: +o.second };
+}
+/* そのタイムゾーンの UTC からのオフセット（分） */
+function tzOffsetMin(tz, date) {
+  const p = tzParts(date, tz);
+  const asUTC = Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s);
+  return Math.round((asUTC - date.getTime()) / 60000);
+}
+/* 「その都市の現地時間で dateStr の minutes 分」に当たる瞬間（Date）を作る */
+function makeInstant(dateStr, minutes, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || '');
+  const now = new Date();
+  const y = m ? +m[1] : now.getFullYear(), mo = m ? +m[2] : now.getMonth() + 1, d = m ? +m[3] : now.getDate();
+  const guess = Date.UTC(y, mo - 1, d, Math.floor(minutes / 60), minutes % 60, 0);
+  let off = tzOffsetMin(tz, new Date(guess));
+  off = tzOffsetMin(tz, new Date(guess - off * 60000)); // 夏時間の境界を補正
+  return new Date(guess - off * 60000);
+}
+/* 時刻コントロールの基準タイムゾーン = メイン（上）パネルの都市 */
+function primaryTz() {
+  const p = panels && panels[0];
+  const c = p ? (p.value === 'here' ? hereCity : p.city) : null;
+  return (c && c.tz) || guessTz();
+}
 
 /* ===== パネル ===== */
 const panels = [...document.querySelectorAll('.panel')].map(el => ({
@@ -554,19 +582,17 @@ let liveMode = true, clockTimer = null, selMin = 720;
 const slider = document.getElementById('slider'), clockEl = document.getElementById('clock');
 const liveBtn = document.getElementById('liveBtn');
 const dateEl = document.getElementById('datep');
-function todayStr() {
-  const n = new Date();
-  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+function todayStr(tz) {
+  const p = tzParts(new Date(), tz || guessTz());
+  return `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
 }
+/* 日付・時刻コントロールは常に「メイン都市の現地時間」を表す */
 function currentDate() {
   if (liveMode) return new Date();
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateEl.value || '');
-  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
-  d.setHours(Math.floor(selMin / 60), selMin % 60, 0, 0); return d;
+  return makeInstant(dateEl.value || todayStr(primaryTz()), selMin, primaryTz());
 }
 function renderAll() { const d = currentDate(); panels.forEach(p => renderPanel(p, d)); }
 function hhmm(m) { return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
-function nowMinutes() { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
 
 /* スライダーは「現在からのオフセット」式: 中央=現在、±12時間。
    3乗カーブで中央付近ほど細かい（中央付近≒1分未満/目盛り、端≒4分/目盛り） */
@@ -590,13 +616,14 @@ function applySliderRaw(raw) {
     selMin = clampNum(Math.round(720 + rawToOffset(raw)), 0, 1439);
   } else {
     const t = new Date(Date.now() + rawToOffset(raw) * 60000);
-    dateEl.value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
-    selMin = t.getHours() * 60 + t.getMinutes();
+    const p = tzParts(t, primaryTz());
+    dateEl.value = `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
+    selMin = p.h * 60 + p.mi;
   }
   syncControls(); renderAll();
 }
 function syncControls() {
-  if (liveMode) selMin = nowMinutes();
+  if (liveMode) selMin = todayMinutesInTz(primaryTz());
   clockEl.textContent = hhmm(selMin);
   if (liveMode) slider.value = 0;
   else if (sliderAnchor === 'noon') slider.value = offsetToRaw(selMin - 720);
@@ -607,11 +634,11 @@ function ensureTimer() {
   if (clockTimer) clearInterval(clockTimer);
   if (liveMode) clockTimer = setInterval(() => { syncControls(); renderAll(); }, 1000);
 }
-function setLive() { liveMode = true; sliderAnchor = 'now'; dateEl.value = todayStr(); syncControls(); renderAll(); ensureTimer(); }
+function setLive() { liveMode = true; sliderAnchor = 'now'; dateEl.value = todayStr(primaryTz()); syncControls(); renderAll(); ensureTimer(); }
 function enterManual() { liveMode = false; if (clockTimer) clearInterval(clockTimer); liveBtn.classList.remove('on'); }
 liveBtn.addEventListener('click', setLive);
 dateEl.addEventListener('change', () => {
-  if (!dateEl.value || dateEl.value === todayStr()) { setLive(); return; } // 今日を選び直したら現在に戻る
+  if (!dateEl.value || dateEl.value === todayStr(primaryTz())) { setLive(); return; } // 今日（都市の現地日付）を選び直したら現在に戻る
   // 別の日付を選んだら: スライダーは正午センターに切り替え
   sliderAnchor = 'noon';
   enterManual();
@@ -872,7 +899,8 @@ function initPanel(p, value) {
     p.value = p.sel.value;
     p.city = p.value === 'here' ? hereCity : cityFromValue(p.value);
     if (p.value === 'here' && !hereCity) updateLocation(false);
-    renderAll();
+    if (p === panels[0] && liveMode) dateEl.value = todayStr(primaryTz()); // 基準都市が変わったら日付表示も現地に
+    syncControls(); renderAll();
   });
 }
 async function boot() {
