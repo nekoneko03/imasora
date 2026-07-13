@@ -107,9 +107,9 @@
              font-family: Georgia, serif; font-style: italic; opacity: .8; }
   #infoBtn:active { transform: scale(.92); }
 
-  /* シェアボタン（ⓘの左隣） */
-  #shareBtn { position: fixed; z-index: 20; top: calc(12px + env(safe-area-inset-top));
-              right: calc(52px + env(safe-area-inset-right));
+  /* シェアボタン（ⓘの真下） */
+  #shareBtn { position: fixed; z-index: 20; top: calc(50px + env(safe-area-inset-top));
+              right: calc(14px + env(safe-area-inset-right));
               width: 30px; height: 30px; border-radius: 50%;
               border: 1px solid rgba(255,255,255,0.35); background: rgba(16,18,30,0.35);
               color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -431,6 +431,8 @@ const Cap = window.Capacitor || {};
 const isNative = !!(Cap.isNativePlatform && Cap.isNativePlatform());
 const Plugins = Cap.Plugins || {};
 const APP_GROUP = 'group.com.kanekoyu.imasora.shared'; // ← capacitor.config と Xcode の App Group に合わせる
+const SHARE_URL = 'https://imasora.vercel.app'; // 宣伝用リンク（ドメイン変更時はここだけ直す）
+const APP_DESC = '太陽の位置から、いまの空の色を計算して描くアプリ';
 
 function toast(msg, ms = 2600) {
   const t = document.getElementById('toast');
@@ -923,7 +925,7 @@ function drawShareCard(canvas, withPlace) {
   x.globalAlpha = .9; x.font = F(500, 46); x.fillText(`約 ${lx} lux`, W / 2, 1170);
   x.globalAlpha = .85; x.font = F(500, 42); x.fillText(`${d.sky.phase}・高度 ${d.h.toFixed(1)}°`, W / 2, 1232);
   x.globalAlpha = .95; x.font = F(800, 44); x.fillText('いまの空色', W / 2, 1780);
-  x.globalAlpha = .7; x.font = F(500, 32); x.fillText('imasora.vercel.app', W / 2, 1832);
+  x.globalAlpha = .7; x.font = F(500, 32); x.fillText(SHARE_URL.replace(/^https?:\/\//, ''), W / 2, 1832);
   x.globalAlpha = 1;
   return true;
 }
@@ -935,7 +937,12 @@ async function doShare() {
   const cv = document.createElement('canvas');
   if (!drawShareCard(cv, shPlace.checked)) return;
   const dataUrl = cv.toDataURL('image/png');
-  const text = '#いまの空色 https://imasora.vercel.app';
+  const info = shareInfo();
+  if (!info) { toast('地点を取得しています…'); return; }
+  const firstLine = shPlace.checked
+    ? `${info.c.name}の空、いま「${info.sky.phase}」。`
+    : `いまの空、「${info.sky.phase}」。`;
+  const text = `${firstLine}\nいまの空色 — ${APP_DESC}\n${SHARE_URL}\n#いまの空色`;
   try {
     if (isNative && Plugins.Filesystem && Plugins.Share) {
       const w = await Plugins.Filesystem.writeFile({ path: `imasora-share.png`, data: dataUrl.split(',')[1], directory: 'CACHE' });
