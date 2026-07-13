@@ -109,7 +109,7 @@ This app displays the theoretical sky color computed on-device from the sun's el
 - Terms of use are shown on first launch and require agreement.
 - The displayed colors are theoretical values and may differ from the actual sky under clouds; this is stated in the app description and FAQ.
 
-（参考日本語: 本アプリは太陽高度から空の色を端末内で計算して表示します。位置情報は任意で、拒否しても都市リストから利用できます。位置情報の外部送信はありません。）
+（参考日本語: 本アプリは太陽高度から空の色を端末内で計算して表示します。位置情報は任意で、拒否しても都市リストから利用できます。位置情報は空の色の計算には端末内でのみ使用し、開発者のサーバーには一切送信しません。地名表示のための逆ジオコーディングにのみ、Apple 標準の CLGeocoder を通じて座標が Apple に送られますが、開発者はそのデータを受け取りません。）
 ---
 
 ## 10. アプリのプライバシー（App Privacy）申告
