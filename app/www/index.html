@@ -308,11 +308,11 @@
         <button id="inClose">閉じる</button>
       </div>
       <div class="in-body">
-        <button class="in-link weblink" data-url="https://imasora.vercel.app/tips.html">
+        <button class="in-link weblink" data-url="https://imasora.app/tips.html">
           <div class="t"><b>空の豆知識</b><span>市民薄明・ゴールデンアワーとは？ 空の色と明るさのはなし</span></div>
           <div class="chev">›</div>
         </button>
-        <button class="in-link weblink" data-url="https://imasora.vercel.app/faq.html">
+        <button class="in-link weblink" data-url="https://imasora.app/faq.html">
           <div class="t"><b>よくある質問</b><span>実際の空と色が違う？ ウィジェットの地点の変え方は？</span></div>
           <div class="chev">›</div>
         </button>
@@ -342,9 +342,9 @@
 
         <h3>規約・ポリシー（全文）</h3>
         <p style="display:flex;flex-wrap:wrap;gap:8px">
-          <button class="dbtn weblink" data-url="https://imasora.vercel.app/terms.html">利用規約</button>
-          <button class="dbtn weblink" data-url="https://imasora.vercel.app/privacy.html">プライバシーポリシー</button>
-          <button class="dbtn weblink" data-url="https://imasora.vercel.app/about.html">運営者情報</button>
+          <button class="dbtn weblink" data-url="https://imasora.app/terms.html">利用規約</button>
+          <button class="dbtn weblink" data-url="https://imasora.app/privacy.html">プライバシーポリシー</button>
+          <button class="dbtn weblink" data-url="https://imasora.app/about.html">運営者情報</button>
         </p>
 
         <p class="in-ver">いまの空色 v1.0.0</p>
@@ -429,7 +429,7 @@
     <div class="wl-name">いまの空色</div>
     <p class="wl-desc">いまこの瞬間の空の色を、<br>太陽の位置から計算して表示します。<br>すべての計算は端末の中だけで行われます。</p>
     <button id="wlStart" class="wl-start">はじめる</button>
-    <p class="wl-note">「はじめる」をタップすると、<button class="weblink" data-url="https://imasora.vercel.app/terms.html">利用規約</button>および<button class="weblink" data-url="https://imasora.vercel.app/privacy.html">プライバシーポリシー</button>に同意したものとみなされます。</p>
+    <p class="wl-note">「はじめる」をタップすると、<button class="weblink" data-url="https://imasora.app/terms.html">利用規約</button>および<button class="weblink" data-url="https://imasora.app/privacy.html">プライバシーポリシー</button>に同意したものとみなされます。</p>
   </div>
 
   <div id="toast"></div>
@@ -444,7 +444,7 @@ const Cap = window.Capacitor || {};
 const isNative = !!(Cap.isNativePlatform && Cap.isNativePlatform());
 const Plugins = Cap.Plugins || {};
 const APP_GROUP = 'group.com.kanekoyu.imasora.shared'; // ← capacitor.config と Xcode の App Group に合わせる
-const SHARE_URL = 'https://imasora.vercel.app/app.html'; // 宣伝用リンク（ドメイン変更時はここだけ直す）
+const SHARE_URL = 'https://imasora.app'; // 宣伝トップ（ドメイン変更時はここだけ直す）
 const APP_DESC = '太陽の位置から、いまの空の色を計算して描くアプリ';
 
 function toast(msg, ms = 2600) {
