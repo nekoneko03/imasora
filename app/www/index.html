@@ -130,6 +130,14 @@
   #shDo { width: 100%; padding: 13px; border-radius: 14px; border: none; cursor: pointer;
           background: rgba(255,210,122,0.9); color: #1a1405; font-size: 15px; font-weight: 800; }
   #shDo:active { transform: scale(.98); }
+  .sh-seg { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .sh-seg button { border: 1px solid rgba(255,255,255,0.30); border-radius: 10px;
+                   padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+                   background: rgba(255,255,255,0.10); color: #fff; font-family: inherit;
+                   transition: all .22s; }
+  .sh-seg button:active { transform: scale(.95); }
+  .sh-seg button.on { background: rgba(255,210,122,0.28);
+                      border-color: rgba(255,210,122,0.7); color: #ffe6b0; }
 
   /* 情報シート */
   #info { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end;
@@ -282,7 +290,12 @@
       </div>
       <div class="sh-body">
         <canvas id="shPrev" width="1080" height="1920"></canvas>
-        <label class="sh-row"><input type="checkbox" id="shPlace">地名を表示する</label>
+        <div class="sh-seg" id="shSeg">
+          <button data-level="off">なし</button>
+          <button data-level="pref">都道府県</button>
+          <button data-level="city">市区町村</button>
+          <button data-level="full">詳細</button>
+        </div>
         <button id="shDo">シェア</button>
       </div>
     </div>
@@ -431,7 +444,7 @@ const Cap = window.Capacitor || {};
 const isNative = !!(Cap.isNativePlatform && Cap.isNativePlatform());
 const Plugins = Cap.Plugins || {};
 const APP_GROUP = 'group.com.kanekoyu.imasora.shared'; // ← capacitor.config と Xcode の App Group に合わせる
-const SHARE_URL = 'https://imasora.vercel.app'; // 宣伝用リンク（ドメイン変更時はここだけ直す）
+const SHARE_URL = 'https://imasora.vercel.app/app.html'; // 宣伝用リンク（ドメイン変更時はここだけ直す）
 const APP_DESC = '太陽の位置から、いまの空の色を計算して描くアプリ';
 
 function toast(msg, ms = 2600) {
@@ -890,8 +903,20 @@ function resetAddUI() { addCitySel.selectedIndex = -1; }
 /* ===== シェア（いまの空をカード画像にしてOSのシェアシートへ） ===== */
 const shareEl = document.getElementById('share');
 const shPrev = document.getElementById('shPrev');
-const shPlace = document.getElementById('shPlace');
-shPlace.checked = (localStorage.getItem('imasora_share_place') || '1') === '1';
+const shSeg = document.getElementById('shSeg');
+let shareLevel = localStorage.getItem('imasora_share_level') || 'city'; // 既定は市区町村（プライバシー配慮）
+
+/* 粒度に応じた地名表示。sub は「兵庫県 芦屋市 打出小槌町」のような空白区切り */
+function placeLabel(c, level) {
+  if (level === 'off') return null;
+  // 座標や「・」を含むトークンで打ち切る（pref/city で座標が出ないように）
+  let toks = (c.sub || '').trim().split(/\s+/).filter(Boolean);
+  const cut = toks.findIndex(t => t === '・' || /^[0-9.,\-]+$/.test(t));
+  const clean = cut === -1 ? toks : toks.slice(0, cut);
+  if (level === 'pref') return { main: clean[0] || c.name, sub: '' };
+  if (level === 'city') return { main: clean.slice(0, 2).join(' ') || c.name, sub: '' };
+  return { main: c.name, sub: c.sub || '' }; // full
+}
 
 function shareInfo() {
   const c = panels[0] && panels[0].city;
@@ -900,7 +925,7 @@ function shareInfo() {
   const h = refract(sunElevation(date, c.lat, c.lon));
   return { c, date, h, sky: skyColors(h) };
 }
-function drawShareCard(canvas, withPlace) {
+function drawShareCard(canvas, level) {
   const d = shareInfo();
   if (!d) return false;
   const W = 1080, H = 1920;
@@ -915,9 +940,10 @@ function drawShareCard(canvas, withPlace) {
   const F = (w, s) => `${w} ${s}px -apple-system, "Hiragino Sans", sans-serif`;
   const dateStr = new Intl.DateTimeFormat('ja-JP', { timeZone: d.c.tz, year: 'numeric', month: 'long', day: 'numeric' }).format(d.date);
   x.globalAlpha = .85; x.font = F(600, 40); x.fillText(dateStr, W / 2, 690);
-  if (withPlace) {
-    x.globalAlpha = 1; x.font = F(700, 62); x.fillText(d.c.name, W / 2, 800);
-    if (d.c.sub) { x.globalAlpha = .8; x.font = F(500, 34); x.fillText(d.c.sub, W / 2, 856); }
+  const label = placeLabel(d.c, level);
+  if (label) {
+    x.globalAlpha = 1; x.font = F(700, 62); x.fillText(label.main, W / 2, 800);
+    if (label.sub) { x.globalAlpha = .8; x.font = F(500, 34); x.fillText(label.sub, W / 2, 856); }
   }
   x.globalAlpha = 1; x.font = F(200, 196);
   x.fillText(localTimeStr(d.date, d.c.tz), W / 2, 1080);
@@ -925,22 +951,23 @@ function drawShareCard(canvas, withPlace) {
   x.globalAlpha = .9; x.font = F(500, 46); x.fillText(`約 ${lx} lux`, W / 2, 1170);
   x.globalAlpha = .85; x.font = F(500, 42); x.fillText(`${d.sky.phase}・高度 ${d.h.toFixed(1)}°`, W / 2, 1232);
   x.globalAlpha = .95; x.font = F(800, 44); x.fillText('いまの空色', W / 2, 1780);
-  x.globalAlpha = .7; x.font = F(500, 32); x.fillText(SHARE_URL.replace(/^https?:\/\//, ''), W / 2, 1832);
+  x.globalAlpha = .7; x.font = F(500, 32); x.fillText(new URL(SHARE_URL).hostname, W / 2, 1832);
   x.globalAlpha = 1;
   return true;
 }
 function openShare() {
-  if (!drawShareCard(shPrev, shPlace.checked)) { toast('地点を取得しています…'); return; }
+  if (!drawShareCard(shPrev, shareLevel)) { toast('地点を取得しています…'); return; }
   shareEl.classList.remove('hidden');
 }
 async function doShare() {
   const cv = document.createElement('canvas');
-  if (!drawShareCard(cv, shPlace.checked)) return;
+  if (!drawShareCard(cv, shareLevel)) return;
   const dataUrl = cv.toDataURL('image/png');
   const info = shareInfo();
   if (!info) { toast('地点を取得しています…'); return; }
-  const firstLine = shPlace.checked
-    ? `${info.c.name}の空、いま「${info.sky.phase}」。`
+  const label = placeLabel(info.c, shareLevel);
+  const firstLine = label
+    ? `${label.main}の空、いま「${info.sky.phase}」。`
     : `いまの空、「${info.sky.phase}」。`;
   const text = `${firstLine}\nいまの空色 — ${APP_DESC}\n${SHARE_URL}\n#いまの空色`;
   try {
@@ -957,10 +984,15 @@ async function doShare() {
 document.getElementById('shareBtn').addEventListener('click', openShare);
 document.getElementById('shClose').addEventListener('click', () => shareEl.classList.add('hidden'));
 shareEl.addEventListener('click', e => { if (e.target === shareEl) shareEl.classList.add('hidden'); });
-shPlace.addEventListener('change', () => {
-  localStorage.setItem('imasora_share_place', shPlace.checked ? '1' : '0');
-  drawShareCard(shPrev, shPlace.checked);
-});
+const shSegBtns = [...shSeg.querySelectorAll('button')];
+function syncSeg() { shSegBtns.forEach(b => b.classList.toggle('on', b.dataset.level === shareLevel)); }
+shSegBtns.forEach(b => b.addEventListener('click', () => {
+  shareLevel = b.dataset.level;
+  localStorage.setItem('imasora_share_level', shareLevel);
+  syncSeg();
+  drawShareCard(shPrev, shareLevel);
+}));
+syncSeg();
 document.getElementById('shDo').addEventListener('click', doShare);
 
 /* 情報シート */
