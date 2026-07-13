@@ -5,147 +5,153 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>空の豆知識 - いまの空色</title>
 <link rel="stylesheet" href="style.css">
-<style>
-  .lead { opacity: .9; }
-  /* フェーズカード */
-  .ph { display: flex; gap: 14px; margin: 16px 0; align-items: stretch; }
-  .ph-sw { width: 42px; min-width: 42px; border-radius: 10px;
-           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
-  .ph-body { flex: 1; min-width: 0; }
-  .ph-head { display: flex; justify-content: space-between; align-items: baseline;
-             gap: 10px; flex-wrap: wrap; }
-  .ph-head strong { font-size: 16px; }
-  .ph-deg { opacity: .6; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .ph-body p { margin: 4px 0 0; font-size: 14px; line-height: 1.85; }
-  /* lux 表（2列なのでスマホでも崩れない） */
-  table.lux td { border: none; border-bottom: 1px solid #333a55; padding: 9px 12px; }
-  table.lux td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
-                     color: #cfe0ff; }
-</style>
 </head>
 <body>
-<h1>空の豆知識</h1>
-<p class="lead">「いまの空色」に出てくる言葉たちの解説です。空は、太陽の高さによって呼び名が変わります。左の色は、本アプリがその高度で実際に表示するグラデーションです。</p>
 
-<h2>太陽の高さと空のフェーズ</h2>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#050712,#050712)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>夜</strong><span class="ph-deg">−18° より下</span></div>
-    <p>空が完全に暗くなった状態。天の川が見えるのはこの時間だけ。</p>
+<nav class="site-nav">
+  <div class="nav-wrap">
+    <a class="nav-brand" href="/">
+      <span class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/>
+        </svg>
+      </span>
+      いまの空色
+    </a>
+    <div class="nav-links">
+      <a href="/tips.html">豆知識</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/engine.html">計算の詳細</a>
+      <a href="/app">Web版</a>
+    </div>
   </div>
+</nav>
+
+<div class="doc">
+  <h1>空の豆知識</h1>
+  <p class="lead">「いまの空色」に出てくる言葉たちの解説です。空は、太陽の高さによって呼び名が変わります。左の色は、本アプリがその高度で実際に表示するグラデーションです。</p>
+
+  <h2>太陽の高さと空のフェーズ</h2>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#050712,#050712)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>夜</strong><span class="ph-deg">−18° より下</span></div>
+      <p>空が完全に暗くなった状態。天の川が見えるのはこの時間だけ。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#060918,#070919)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>天文薄明</strong><span class="ph-deg">−18° 〜 −12°</span></div>
+      <p>肉眼ではほぼ夜。でも空はわずかに明るく、暗い星や星雲が見えにくくなる。天体観測者が「観測開始・終了」の目安にする時間。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#12193c,#231f40)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>航海薄明</strong><span class="ph-deg">−12° 〜 −6°</span></div>
+      <p>水平線の輪郭と明るい星が同時に見える時間。GPSのない時代、船乗りはこの時間に星の高さを測って自分の位置を割り出した。名前の由来。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#3b4683,#975651)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>市民薄明</strong><span class="ph-deg">−6° 〜 0°</span></div>
+      <p>照明なしで屋外活動ができる明るさ。空の低いところがオレンジや紫に染まり、一番星（金星）が見え始める。いわゆる「マジックアワー」「ブルーアワー」はこのあたり。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#576eb2,#bc7d58)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>日の出／日の入り</strong><span class="ph-deg">0°</span></div>
+      <p>太陽の縁が地平線に接する瞬間。大気の屈折のおかげで、実際の太陽は幾何学的にはまだ地平線の下にある。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#648ee0,#d3b095)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>ゴールデンアワー</strong><span class="ph-deg">0° 〜 6°ごろ</span></div>
+      <p>光が大気を長く通るため赤みを帯び、影がやわらかく伸びる。写真家が一日で最も愛する時間。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#5a97fe,#a6cdff)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>昼</strong><span class="ph-deg">6° 〜 50°ごろ</span></div>
+      <p>青空。空が青いのは、太陽光のうち波長の短い青い光が大気の分子に散乱されやすいから（レイリー散乱）。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#4988ff,#93c7ff)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>真昼</strong><span class="ph-deg">50° 以上</span></div>
+      <p>太陽がほぼ頭上にあり、空の青が最も濃く見える。日本で高度が最大になるのは夏至の正午ごろ（大阪で約78°）。</p>
+    </div>
+  </div>
+
+  <h2>明るさ（lux）の目安</h2>
+  <p>アプリに表示される lux（ルクス）は明るさの単位です。身近な明るさと比べてみてください。</p>
+  <table class="lux">
+    <tr><td class="num">100,000 lux</td><td>真夏の直射日光</td></tr>
+    <tr><td class="num">10,000 lux</td><td>曇りの日中の屋外</td></tr>
+    <tr><td class="num">1,000 lux</td><td>明るいオフィス・コンビニの店内</td></tr>
+    <tr><td class="num">400 lux</td><td>日の出・日の入りの頃</td></tr>
+    <tr><td class="num">10 lux</td><td>薄明のなか、ろうそくの手元くらい</td></tr>
+    <tr><td class="num">0.25 lux</td><td>満月の夜</td></tr>
+    <tr><td class="num">0.001 lux</td><td>月のない星空の夜</td></tr>
+  </table>
+
+  <h2>空の色は、こうして計算しています</h2>
+  <p class="lead">「いまの空色」は天気予報もカメラも使わず、4つのステップの計算だけで空を描いています。材料は、緯度・経度と時刻だけ。</p>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#4988ff,#93c7ff)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>1. 太陽の位置を求める</strong></div>
+      <p>日時から太陽の天球上の位置（赤経・赤緯）を天文学の式で計算し、あなたの緯度・経度と組み合わせて「いま太陽が地平線からどの高さにあるか」＝太陽高度を求めます。船乗りが星で位置を割り出したのと同じ理屈の、逆向きの計算です。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#576eb2,#bc7d58)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>2. 大気のレンズ効果を足す</strong></div>
+      <p>地平線近くの光は大気で屈折して、太陽は実際より少し「浮き上がって」見えます（大気差）。この補正のおかげで、幾何学的にはまだ地平線の下にある太陽の「見かけの日の出」も正しく再現されます。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#648ee0,#d3b095)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>3. 明るさ（lux）に変換する</strong></div>
+      <p>太陽高度と地上の明るさの関係には実測にもとづくモデルがあり、本アプリはそれを近似して使っています。真昼の約10万luxから星空の0.001luxまで、8桁におよぶ変化を扱うので、計算は対数で行っています。</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-sw" style="background:linear-gradient(180deg,#3b4683,#975651)"></div>
+    <div class="ph-body">
+      <div class="ph-head"><strong>4. 高度を色に翻訳する</strong></div>
+      <p>夜（−18°）から真昼（60°）まで、太陽高度ごとの空の色（画面の上端と下端の2色）をあらかじめ定義しておき、あいだの高度は色を滑らかに補間します。最後にステップ3 of 明るさを掛け合わせると、このページの色見本と同じグラデーションができあがります。薄明のフェーズ名も、この高度から決まります。</p>
+    </div>
+  </div>
+
+  <p>雲がどう出るかは予報でしか分かりませんが、太陽がどこにいるかは計算で確実に分かります。だから本アプリは「雲がなければこう見えるはずの空」を、通信なしで、世界中のどの場所・どの時刻についても描けるのです。</p>
+  <p>数式レベルの解説は <a href="engine.html">計算の詳細</a> にまとめました。</p>
+
+  <h2>ちいさな使いこなし</h2>
+  <p>時刻スライダーを夕方に合わせれば、今日のゴールデンアワーが何時ごろか一目でわかります。日付を冬至や夏至に変えて、同じ場所の空がどれだけ変わるか見るのもおすすめです。比較モードで「大阪とロンドン」を並べれば、地球の裏側がいま何色の空の下にいるかがわかります。</p>
 </div>
 
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#060918,#070919)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>天文薄明</strong><span class="ph-deg">−18° 〜 −12°</span></div>
-    <p>肉眼ではほぼ夜。でも空はわずかに明るく、暗い星や星雲が見えにくくなる。天体観測者が「観測開始・終了」の目安にする時間。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#12193c,#231f40)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>航海薄明</strong><span class="ph-deg">−12° 〜 −6°</span></div>
-    <p>水平線の輪郭と明るい星が同時に見える時間。GPSのない時代、船乗りはこの時間に星の高さを測って自分の位置を割り出した。名前の由来。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#3b4683,#975651)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>市民薄明</strong><span class="ph-deg">−6° 〜 0°</span></div>
-    <p>照明なしで屋外活動ができる明るさ。空の低いところがオレンジや紫に染まり、一番星（金星）が見え始める。いわゆる「マジックアワー」「ブルーアワー」はこのあたり。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#576eb2,#bc7d58)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>日の出／日の入り</strong><span class="ph-deg">0°</span></div>
-    <p>太陽の縁が地平線に接する瞬間。大気の屈折のおかげで、実際の太陽は幾何学的にはまだ地平線の下にある。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#648ee0,#d3b095)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>ゴールデンアワー</strong><span class="ph-deg">0° 〜 6°ごろ</span></div>
-    <p>光が大気を長く通るため赤みを帯び、影がやわらかく伸びる。写真家が一日で最も愛する時間。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#5a97fe,#a6cdff)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>昼</strong><span class="ph-deg">6° 〜 50°ごろ</span></div>
-    <p>青空。空が青いのは、太陽光のうち波長の短い青い光が大気の分子に散乱されやすいから（レイリー散乱）。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#4988ff,#93c7ff)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>真昼</strong><span class="ph-deg">50° 以上</span></div>
-    <p>太陽がほぼ頭上にあり、空の青が最も濃く見える。日本で高度が最大になるのは夏至の正午ごろ（大阪で約78°）。</p>
-  </div>
-</div>
-
-<h2>明るさ（lux）の目安</h2>
-<p>アプリに表示される lux（ルクス）は明るさの単位です。身近な明るさと比べてみてください。</p>
-<table class="lux">
-  <tr><td class="num">100,000 lux</td><td>真夏の直射日光</td></tr>
-  <tr><td class="num">10,000 lux</td><td>曇りの日中の屋外</td></tr>
-  <tr><td class="num">1,000 lux</td><td>明るいオフィス・コンビニの店内</td></tr>
-  <tr><td class="num">400 lux</td><td>日の出・日の入りの頃</td></tr>
-  <tr><td class="num">10 lux</td><td>薄明のなか、ろうそくの手元くらい</td></tr>
-  <tr><td class="num">0.25 lux</td><td>満月の夜</td></tr>
-  <tr><td class="num">0.001 lux</td><td>月のない星空の夜</td></tr>
-</table>
-
-<h2>空の色は、こうして計算しています</h2>
-<p class="lead">「いまの空色」は天気予報もカメラも使わず、4つのステップの計算だけで空を描いています。材料は、緯度・経度と時刻だけ。</p>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#4988ff,#93c7ff)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>1. 太陽の位置を求める</strong></div>
-    <p>日時から太陽の天球上の位置（赤経・赤緯）を天文学の式で計算し、あなたの緯度・経度と組み合わせて「いま太陽が地平線からどの高さにあるか」＝太陽高度を求めます。船乗りが星で位置を割り出したのと同じ理屈の、逆向きの計算です。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#576eb2,#bc7d58)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>2. 大気のレンズ効果を足す</strong></div>
-    <p>地平線近くの光は大気で屈折して、太陽は実際より少し「浮き上がって」見えます（大気差）。この補正のおかげで、幾何学的にはまだ地平線の下にある太陽の「見かけの日の出」も正しく再現されます。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#648ee0,#d3b095)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>3. 明るさ（lux）に変換する</strong></div>
-    <p>太陽高度と地上の明るさの関係には実測にもとづくモデルがあり、本アプリはそれを近似して使っています。真昼の約10万luxから星空の0.001luxまで、8桁におよぶ変化を扱うので、計算は対数で行っています。</p>
-  </div>
-</div>
-
-<div class="ph">
-  <div class="ph-sw" style="background:linear-gradient(180deg,#3b4683,#975651)"></div>
-  <div class="ph-body">
-    <div class="ph-head"><strong>4. 高度を色に翻訳する</strong></div>
-    <p>夜（−18°）から真昼（60°）まで、太陽高度ごとの空の色（画面の上端と下端の2色）をあらかじめ定義しておき、あいだの高度は色を滑らかに補間します。最後にステップ3の明るさを掛け合わせると、このページの色見本と同じグラデーションができあがります。薄明のフェーズ名も、この高度から決まります。</p>
-  </div>
-</div>
-
-<p>雲がどう出るかは予報でしか分かりませんが、太陽がどこにいるかは計算で確実に分かります。だから本アプリは「雲がなければこう見えるはずの空」を、通信なしで、世界中のどの場所・どの時刻についても描けるのです。</p>
-<p>数式レベルの解説は <a href="engine.html">計算の詳細</a> にまとめました。</p>
-
-<h2>ちいさな使いこなし</h2>
-<p>時刻スライダーを夕方に合わせれば、今日のゴールデンアワーが何時ごろか一目でわかります。日付を冬至や夏至に変えて、同じ場所の空がどれだけ変わるか見るのもおすすめです。比較モードで「大阪とロンドン」を並べれば、地球の裏側がいま何色の空の下にいるかがわかります。</p>
-
-<footer>© 2026 いまの空色 ・ <a href="faq.html">よくある質問</a> ・ <a href="about.html">運営者情報</a> ・ <a href="/">アプリを開く</a></footer>
+<footer>© 2026 いまの空色 ・ <a href="faq.html">よくある質問</a> ・ <a href="about.html">運営者情報</a> ・ <a href="/">トップに戻る</a></footer>
 </body>
 </html>
