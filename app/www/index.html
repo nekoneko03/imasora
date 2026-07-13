@@ -818,7 +818,9 @@ async function updateLocation(announce) {
       saveForWidget(lat, lon, hereCity.sub);
       if (announce) toast(`現在地を更新しました（${g.name}）`);
     } else if (announce) {
-      toast(`地名取得できず: ${gr.err}`);
+      // ブラウザ版など逆ジオコーディング非対応環境では内蔵の最寄り地名で確定
+      if (gr.err === 'not-native' || gr.err === 'no-plugin') toast('現在地を更新しました');
+      else toast(`地名取得できず: ${gr.err}`);
     }
   } catch (e) {
     if (announce) toast('位置情報を取得できませんでした。設定で許可を確認してください。');

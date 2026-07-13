@@ -2,28 +2,33 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>いま空</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>いまの空色</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-user-select: none; user-select: none;      /* テキスト選択を無効化 */
+      -webkit-touch-callout: none;                        /* 長押しメニューを無効化 */
+      -webkit-tap-highlight-color: transparent; }         /* タップ時の灰色ハイライトも消す */
   html, body { width: 100%; height: 100%; overflow: hidden; background: #05060a; }
   body { font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif; color: #fff;
-         -webkit-font-smoothing: antialiased; }
+         -webkit-font-smoothing: antialiased;
+         padding: env(safe-area-inset-top) env(safe-area-inset-right)
+                  env(safe-area-inset-bottom) env(safe-area-inset-left); }
 
-  #stage { display: flex; width: 100vw; height: 100vh; }
+  #stage { display: flex; width: 100%; height: 100dvh; }
   .panel { position: relative; flex: 1; overflow: hidden;
            transition: background 1.4s cubic-bezier(.4,0,.2,1); }
   .panel + .panel { box-shadow: -1px 0 0 rgba(255,255,255,0.14); }
-  /* 1都市モード: 右パネルを隠して左を全画面に */
   #stage.single .panel[data-i="1"] { display: none; }
 
   /* 上部: 都市セレクト */
-  .ptop { position: absolute; z-index: 3; top: 20px; left: 50%; transform: translateX(-50%);
+  .ptop { position: absolute; z-index: 3; top: 18px; left: 50%; transform: translateX(-50%);
           width: min(82%, 260px); }
   select {
     width: 100%; text-align: center; text-align-last: center;
     border: 1px solid rgba(255,255,255,0.28); background: rgba(20,24,38,0.25);
-    backdrop-filter: blur(12px); color: #fff; font-size: 14px; font-weight: 600;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    color: #fff; font-size: 14px; font-weight: 600;
     padding: 11px 14px; border-radius: 13px; outline: none; cursor: pointer;
     box-shadow: 0 6px 22px rgba(0,0,0,0.22);
     -webkit-appearance: none; appearance: none; transition: border-color .3s;
@@ -36,60 +41,173 @@
            transform: translateY(-50%); text-align: center; pointer-events: none;
            text-shadow: 0 2px 18px rgba(0,0,0,0.4); }
   .pname { font-size: 22px; font-weight: 700; letter-spacing: .05em; opacity: .95; }
+  .ploc  { font-size: 12px; opacity: .7; margin-top: 2px; min-height: 15px; }
   .ptime { font-size: 58px; font-weight: 200; line-height: 1.02; margin: 6px 0 4px;
            font-variant-numeric: tabular-nums; }
   .plux  { font-size: 14px; opacity: .9; letter-spacing: .02em; }
   .pphase{ font-size: 13px; opacity: .72; margin-top: 2px; }
 
-  /* 下部中央: 時刻コントロール */
-  #dock { position: fixed; z-index: 10; bottom: 30px; left: 50%; transform: translateX(-50%);
-          display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 18px;
+  /* 下部中央: コントロール */
+  #dock { position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
+          bottom: calc(24px + env(safe-area-inset-bottom));
+          display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 18px;
           background: rgba(16,18,30,0.42); border: 1px solid rgba(255,255,255,0.18);
-          backdrop-filter: blur(18px); box-shadow: 0 14px 46px rgba(0,0,0,0.4);
-          width: min(94vw, 600px); flex-wrap: wrap; justify-content: center; }
-  #datep { border: 1px solid rgba(255,255,255,0.28); border-radius: 12px;
+          -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+          box-shadow: 0 14px 46px rgba(0,0,0,0.4);
+          width: min(94vw, 620px); flex-wrap: wrap; justify-content: center; }
+  .dbtn { border: 1px solid rgba(255,255,255,0.30); border-radius: 12px; cursor: pointer;
+          white-space: nowrap; font-size: 13px; font-weight: 700; color: #fff;
+          padding: 10px 12px; background: rgba(255,255,255,0.12); transition: all .22s;
+          display: inline-flex; align-items: center; gap: 6px; }
+  .ic { width: 15px; height: 15px; flex: 0 0 auto; fill: none;
+        stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  #datep { border: 1px solid rgba(255,255,255,0.30); border-radius: 12px;
            background: rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-weight: 600;
-           padding: 9px 11px; outline: none; cursor: pointer; color-scheme: dark; }
+           padding: 9px 10px; outline: none; cursor: pointer; color-scheme: dark;
+           font-family: inherit; }
   #datep::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .8; cursor: pointer; }
-  #mode { border: 1px solid rgba(255,255,255,0.35); border-radius: 12px; cursor: pointer; white-space: nowrap;
-          font-size: 13px; font-weight: 700; color: #fff; padding: 10px 13px;
-          background: rgba(255,255,255,0.12); transition: all .25s; }
-  #mode:hover { background: rgba(255,255,255,0.22); }
-  #mode:active { transform: scale(.95); }
-  /* スライダー（数直線）: 常に表示 */
-  #slider { flex: 1; min-width: 120px; -webkit-appearance: none; appearance: none; height: 5px;
+  .dbtn:hover { background: rgba(255,255,255,0.22); }
+  .dbtn:active { transform: scale(.95); }
+  .dbtn.on { background: rgba(255,210,122,0.28); border-color: rgba(255,210,122,0.7); color: #ffe6b0; }
+  /* スライダー: 中央=現在。過去(左)・未来(右)へ±12時間 */
+  .sliderwrap { position: relative; flex: 1; min-width: 120px; display: flex; align-items: center; }
+  .sliderwrap::before { content: ''; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%); width: 2px; height: 15px; border-radius: 1px;
+    background: rgba(255,255,255,0.9); pointer-events: none; z-index: 1; }
+  #slider { width: 100%; -webkit-appearance: none; appearance: none; height: 5px;
+            pointer-events: none; /* 入力は #sliderTouch が受け、これは表示専用 */
             border-radius: 5px; outline: none;
-            background: linear-gradient(90deg, rgba(30,40,90,.9), rgba(120,150,220,.9),
-                        rgba(255,200,140,.95), rgba(120,90,150,.9), rgba(20,24,50,.95)); }
+            background: linear-gradient(90deg, rgba(20,24,50,.95), rgba(90,110,180,.9),
+                        rgba(235,240,255,.95), rgba(90,110,180,.9), rgba(20,24,50,.95)); }
+  /* 透明タッチ層: ネイティブのスライダー操作と競合しないよう入力を一手に引き受ける */
+  #sliderTouch { position: absolute; left: 0; right: 0; top: -12px; bottom: -12px;
+                 z-index: 2; touch-action: none; }
   #slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #fff, #dfe4ef);
     box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.14); cursor: pointer; }
-  #slider::-moz-range-thumb { width: 22px; height: 22px; border: none; border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #fff, #dfe4ef);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; }
-  /* 時刻表示（タップでホイールを開く） */
-  #clock { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
-           min-width: 78px; text-align: center; white-space: nowrap; cursor: pointer;
-           color: #fff; padding: 8px 12px; border-radius: 11px;
-           border: 1px solid rgba(255,255,255,0.30); background: rgba(255,255,255,0.12);
-           transition: all .22s; }
-  #clock:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
+  #clock { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+           min-width: 64px; text-align: center; white-space: nowrap; cursor: pointer;
+           color: #fff; padding: 9px 10px; border-radius: 11px;
+           border: 1px solid rgba(255,255,255,0.30); background: rgba(255,255,255,0.12); }
   #clock:active { transform: scale(.96); }
-  #clock small { opacity: .6; font-size: 11px; font-weight: 400; }
+
+  /* アプリ名 */
+  #appname { position: fixed; z-index: 20; top: calc(14px + env(safe-area-inset-top));
+             left: calc(18px + env(safe-area-inset-left)); pointer-events: none;
+             font-size: 20px; font-weight: 800; letter-spacing: .12em;
+             text-shadow: 0 2px 12px rgba(0,0,0,0.45); opacity: .95; }
+
+  /* 情報ボタン（右上） */
+  #infoBtn { position: fixed; z-index: 20; top: calc(12px + env(safe-area-inset-top));
+             right: calc(14px + env(safe-area-inset-right));
+             width: 30px; height: 30px; border-radius: 50%;
+             border: 1px solid rgba(255,255,255,0.35); background: rgba(16,18,30,0.35);
+             color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+             -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+             font-family: Georgia, serif; font-style: italic; opacity: .8; }
+  #infoBtn:active { transform: scale(.92); }
+
+  /* シェアボタン（ⓘの真下） */
+  #shareBtn { position: fixed; z-index: 20; top: calc(50px + env(safe-area-inset-top));
+              right: calc(14px + env(safe-area-inset-right));
+              width: 30px; height: 30px; border-radius: 50%;
+              border: 1px solid rgba(255,255,255,0.35); background: rgba(16,18,30,0.35);
+              color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+              -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: .8; }
+  #shareBtn:active { transform: scale(.92); }
+  #shareBtn svg { width: 14px; height: 14px; }
+
+  /* シェアシート */
+  #share { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end;
+           justify-content: center; background: rgba(0,0,0,0.45);
+           -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  #share.hidden { display: none; }
+  .sh-body { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 4px; }
+  #shPrev { width: 168px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
+  .sh-row { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .sh-row input { width: auto; accent-color: #ffd27a; transform: scale(1.2); }
+  #shDo { width: 100%; padding: 13px; border-radius: 14px; border: none; cursor: pointer;
+          background: rgba(255,210,122,0.9); color: #1a1405; font-size: 15px; font-weight: 800; }
+  #shDo:active { transform: scale(.98); }
+  .sh-seg { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .sh-seg button { border: 1px solid rgba(255,255,255,0.30); border-radius: 10px;
+                   padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+                   background: rgba(255,255,255,0.10); color: #fff; font-family: inherit;
+                   transition: all .22s; }
+  .sh-seg button:active { transform: scale(.95); }
+  .sh-seg button.on { background: rgba(255,210,122,0.28);
+                      border-color: rgba(255,210,122,0.7); color: #ffe6b0; }
+
+  /* 情報シート */
+  #info { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end;
+          justify-content: center; background: rgba(0,0,0,0.45);
+          -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  #info.hidden { display: none; }
+  .in-card { background: rgba(20,22,34,0.97); border: 1px solid rgba(255,255,255,0.14);
+             border-radius: 22px 22px 0 0; width: min(100vw, 480px); max-height: 82dvh;
+             display: flex; flex-direction: column;
+             padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
+             box-shadow: 0 -12px 50px rgba(0,0,0,0.5); }
+  .in-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .in-head h2 { font-size: 16px; font-weight: 800; }
+  .in-head button { background: none; border: none; color: #ffd27a; font-size: 15px;
+                    font-weight: 700; cursor: pointer; padding: 6px; }
+  .in-body { overflow-y: auto; font-size: 13px; line-height: 1.9; opacity: .92; }
+  .in-body h3 { font-size: 13px; margin: 14px 0 4px; color: #9cc4ff; }
+  .in-body p { margin-bottom: 6px; }
+  .in-ver { margin-top: 14px; opacity: .5; font-size: 11px; }
+  /* 上部の大きなメニューカード */
+  .in-link { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+             padding: 13px 15px; margin-bottom: 9px; border-radius: 14px; cursor: pointer;
+             border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08);
+             color: #fff; font: inherit; }
+  .in-link:active { transform: scale(.98); }
+  .in-link .t { flex: 1; min-width: 0; }
+  .in-link .t b { display: block; font-size: 14.5px; }
+  .in-link .t span { display: block; font-size: 11.5px; opacity: .65; margin-top: 2px; line-height: 1.5; }
+  .in-link .chev { opacity: .45; font-size: 17px; }
+
+  /* 初回ウェルカム（利用規約への同意） */
+  #welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; text-align: center;
+             background: linear-gradient(180deg, #0a1230 0%, #35406e 55%, #b5745a 100%);
+             padding: 36px 28px calc(36px + env(safe-area-inset-bottom)); }
+  #welcome.hidden { display: none; }
+  .wl-name { font-size: 30px; font-weight: 800; letter-spacing: .14em;
+             text-shadow: 0 2px 16px rgba(0,0,0,0.4); }
+  .wl-desc { font-size: 14px; line-height: 2; opacity: .9; margin-top: 14px; max-width: 300px; }
+  .wl-start { margin-top: 34px; border: none; border-radius: 15px; cursor: pointer;
+              font-size: 16px; font-weight: 700; color: #1a2244; padding: 15px 56px;
+              background: linear-gradient(180deg, #ffffff, #dfe6f5);
+              box-shadow: 0 8px 26px rgba(0,0,0,0.35); }
+  .wl-start:active { transform: scale(.97); }
+  .wl-note { font-size: 11px; opacity: .8; margin-top: 16px; line-height: 1.9; max-width: 300px; }
+  .wl-note button { background: none; border: none; padding: 0; color: #cfe0ff;
+                    font-size: 11px; text-decoration: underline; cursor: pointer; }
+
+  /* トースト */
+  #toast { position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
+           bottom: calc(96px + env(safe-area-inset-bottom));
+           background: rgba(16,18,30,0.9); border: 1px solid rgba(255,255,255,0.2);
+           color: #fff; font-size: 13px; padding: 11px 16px; border-radius: 12px;
+           max-width: 88vw; text-align: center; opacity: 0; pointer-events: none;
+           transition: opacity .3s; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #toast.show { opacity: 1; }
 
   /* ホイール時刻ピッカー */
-  #tpick { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end;
-           justify-content: center; background: rgba(0,0,0,0.42); backdrop-filter: blur(3px); }
+  #tpick { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end;
+           justify-content: center; background: rgba(0,0,0,0.42);
+           -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
   #tpick.hidden { display: none; }
-  .tp-card { background: rgba(20,22,34,0.94); border: 1px solid rgba(255,255,255,0.14);
-             border-radius: 22px 22px 0 0; padding: 12px 20px 26px; width: min(100vw, 440px);
+  .tp-card { background: rgba(20,22,34,0.96); border: 1px solid rgba(255,255,255,0.14);
+             border-radius: 22px 22px 0 0; width: min(100vw, 440px);
+             padding: 12px 20px calc(22px + env(safe-area-inset-bottom));
              box-shadow: 0 -12px 50px rgba(0,0,0,0.5); }
   .tp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
   .tp-head span { font-size: 13px; opacity: .7; letter-spacing: .05em; }
   .tp-head button { background: none; border: none; font-size: 16px; font-weight: 700;
-                    cursor: pointer; padding: 8px 6px; }
-  #tpNow { color: #9cc4ff; }
-  #tpDone { color: #ffd27a; }
+                    cursor: pointer; padding: 8px 6px; color: #ffd27a; }
   .tp-wheels { position: relative; display: flex; align-items: center; justify-content: center;
                gap: 4px; height: 200px; }
   .tp-colon { font-size: 26px; font-weight: 600; opacity: .55; padding-bottom: 3px; }
@@ -101,57 +219,179 @@
   .wheel::-webkit-scrollbar { display: none; }
   .witem { height: 40px; display: flex; align-items: center; justify-content: center;
            font-size: 27px; font-weight: 500; font-variant-numeric: tabular-nums;
-           scroll-snap-align: center; transition: opacity .12s, transform .12s; }
+           scroll-snap-align: center; transition: opacity .12s, transform .12s; color: #fff; }
   .tp-pill { position: absolute; left: 8px; right: 8px; top: 80px; height: 40px; border-radius: 12px;
              background: rgba(255,255,255,0.10); pointer-events: none; }
 
-  /* アプリ名 */
-  #appname { position: fixed; z-index: 20; top: 18px; left: 22px; pointer-events: none;
-             font-size: 20px; font-weight: 800; letter-spacing: .12em;
-             text-shadow: 0 2px 12px rgba(0,0,0,0.45); opacity: .95; }
+  /* 地点登録シート */
+  #sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end;
+           justify-content: center; background: rgba(0,0,0,0.45);
+           -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  #sheet.hidden { display: none; }
+  .sh-card { background: rgba(20,22,34,0.96); border: 1px solid rgba(255,255,255,0.14);
+             border-radius: 22px 22px 0 0; width: min(100vw, 460px);
+             max-height: 80dvh; display: flex; flex-direction: column;
+             padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
+             box-shadow: 0 -12px 50px rgba(0,0,0,0.5); }
+  .sh-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .sh-head h2 { font-size: 16px; font-weight: 800; letter-spacing: .04em; }
+  .sh-head button { background: none; border: none; color: #ffd27a; font-size: 15px;
+                    font-weight: 700; cursor: pointer; padding: 6px; }
+  .sh-list { overflow-y: auto; flex: 1; margin: 2px -4px 12px; }
+  .sh-row { display: flex; align-items: center; gap: 10px; padding: 12px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sh-sw { width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
+           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15); }
+  .sh-meta { flex: 1; min-width: 0; }
+  .sh-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sh-sub { font-size: 11px; opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sh-go { border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1);
+           color: #fff; font-size: 12px; font-weight: 700; border-radius: 9px; padding: 7px 10px; cursor: pointer; }
+  .sh-del { border: none; background: none; color: #ff8a8a; font-size: 18px; cursor: pointer; padding: 4px 6px; }
+  .sh-empty { text-align: center; opacity: .55; font-size: 13px; padding: 22px 0; }
+  .sh-add { display: flex; flex-direction: column; gap: 8px; }
+  .sh-add-row { display: flex; gap: 8px; }
+  .sh-add-row > button, .sh-citywrap { flex: 1; }
+  .sh-add-row .dbtn { width: 100%; justify-content: center; }
+  /* 「都市から登録」: ボタンの上に透明セレクトを重ね、タップで直接ピッカーを開く */
+  .sh-citywrap { position: relative; }
+  #addCitySel { position: absolute; inset: 0; width: 100%; height: 100%;
+                opacity: 0; border: none; padding: 0; box-shadow: none; }
 
-  /* スマホ（縦長画面）: 上下2分割。ドックは重ねず最下部に置く */
+  /* スマホ縦画面: 上下2分割。ドックは浮かせず最下部に通常配置 */
   @media (orientation: portrait) {
-    body { display: flex; flex-direction: column; height: 100dvh; }
-    #stage { flex: 1 1 auto; min-height: 0; width: 100%; height: auto; flex-direction: column; }
+    body { display: flex; flex-direction: column; }
+    #stage { flex: 1 1 auto; min-height: 0; height: auto; flex-direction: column; width: 100%; }
     .panel + .panel { box-shadow: 0 -1px 0 rgba(255,255,255,0.16); }
     .ptime { font-size: 44px; }
     .pname { font-size: 18px; }
     .ptop { top: 12px; width: min(88%, 240px); }
-    #appname { font-size: 16px; top: 11px; left: 14px; z-index: 25; }
-    /* ドックを通常フロー化して画面下に固定表示せず並べる */
+    /* 縦画面ではロゴを出さない（セレクトと重なるため） */
+    #appname { display: none; }
     #dock { position: static; transform: none; left: auto; bottom: auto;
             flex: 0 0 auto; width: 100%; max-width: none; border-radius: 18px 18px 0 0;
-            padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+            padding-bottom: 16px; }
+    #toast { bottom: calc(120px + env(safe-area-inset-bottom)); }
   }
 </style>
 </head>
 <body>
-  <div id="appname">いま空</div>
-  <div id="stage">
-    <div class="panel" data-i="0">
-      <div class="ptop"><select></select></div>
-      <div class="pinfo"><div class="pname"></div><div class="ptime"></div>
-        <div class="plux"></div><div class="pphase"></div></div>
-    </div>
-    <div class="panel" data-i="1">
-      <div class="ptop"><select></select></div>
-      <div class="pinfo"><div class="pname"></div><div class="ptime"></div>
-        <div class="plux"></div><div class="pphase"></div></div>
+  <div id="appname">いまの空色</div>
+  <button id="infoBtn" aria-label="アプリ情報">i</button>
+  <button id="shareBtn" aria-label="いまの空をシェア">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12v7A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-7"/><path d="M12 14V3.5"/><path d="M8 7l4-4 4 4"/></svg>
+  </button>
+
+  <div id="share" class="hidden">
+    <div class="in-card">
+      <div class="in-head">
+        <h2>いまの空をシェア</h2>
+        <button id="shClose">閉じる</button>
+      </div>
+      <div class="sh-body">
+        <canvas id="shPrev" width="1080" height="1920"></canvas>
+        <div class="sh-seg" id="shSeg">
+          <button data-level="off">なし</button>
+          <button data-level="pref">都道府県</button>
+          <button data-level="city">市区町村</button>
+          <button data-level="full">詳細</button>
+        </div>
+        <button id="shDo">シェア</button>
+      </div>
     </div>
   </div>
 
+  <div id="info" class="hidden">
+    <div class="in-card">
+      <div class="in-head">
+        <h2>このアプリについて</h2>
+        <button id="inClose">閉じる</button>
+      </div>
+      <div class="in-body">
+        <button class="in-link weblink" data-url="https://imasora.app/tips.html">
+          <div class="t"><b>空の豆知識</b><span>市民薄明・ゴールデンアワーとは？ 空の色と明るさのはなし</span></div>
+          <div class="chev">›</div>
+        </button>
+        <button class="in-link weblink" data-url="https://imasora.app/faq.html">
+          <div class="t"><b>よくある質問</b><span>実際の空と色が違う？ ウィジェットの地点の変え方は？</span></div>
+          <div class="chev">›</div>
+        </button>
+        <button class="in-link weblink" data-url="https://forms.gle/zjWXDhymMUnvAgDS9">
+          <div class="t"><b>不具合報告・ご要望</b><span>気づいたこと、ほしい機能があれば教えてください</span></div>
+          <div class="chev">›</div>
+        </button>
+
+        <p style="margin-top:8px">「いまの空色」は、緯度・経度と時刻から太陽の高度を計算し、空の色を描き出すアプリです。すべての計算は端末の中だけで行われます。</p>
+
+        <h3>プライバシーポリシー（要旨）</h3>
+        <p><strong>本アプリは、利用者の個人情報を収集しません。</strong>開発者は利用者のデータを取得・保存するサーバーを有しておらず、開発者が利用者の情報を受け取ることはありません。</p>
+        <p><strong>位置情報</strong> — 現在地の空の色を計算・表示するために、許可を得たうえで端末の位置情報を利用します。位置情報は端末内でのみ使用し、地名表示のための Apple のサービスへの送信（下記「地名の表示」参照）を除き、外部へ送信・保存することはありません。登録した地点やウィジェット用のデータも端末内にのみ保存されます。許可は iOS の「設定」からいつでも取り消せます。</p>
+        <p><strong>地名の表示</strong> — 現在地の地名表示には、マップや天気アプリなど多くの iOS アプリで使われている iOS 標準の逆ジオコーディング機能を使用します。地名への変換のために座標が暗号化されて Apple へ送信されますが、その取り扱いは Apple のプライバシーポリシーに従い、開発者が内容を受け取ることはありません。通信できない環境では送信されず、内蔵の都市リストから最寄りの地名を表示します。</p>
+        <p><strong>広告・解析</strong> — 広告、アクセス解析、トラッキングは一切使用していません。アカウント登録も不要です。</p>
+        <p><strong>お問い合わせ時の情報</strong> — フォームやメールでお問い合わせの際に任意でご提供いただいた返信用メールアドレスや端末情報（OS のバージョン、機種名等）は、お問い合わせへの対応のみに使用します。</p>
+        <p>正式な全文は、下記ウェブサイトの「プライバシーポリシー」をご覧ください。</p>
+
+        <h3>利用規約（要旨）</h3>
+        <p>本アプリは無料でご利用いただけます。表示される空の色・明るさ・太陽高度等は天文計算に基づく<strong>理論上の推定値</strong>であり、実際の空の状態（天候・雲など）を反映するものではありません。表示内容の正確性は保証されず、重要な判断への利用は利用者自身の責任で行ってください。本アプリの複製・改変・再配布・解析行為は禁止します。運営者の損害賠償責任は、法令で認められる範囲で制限されます。本規約は日本法に準拠します。全文は下記ウェブサイトの「利用規約」をご覧ください。</p>
+
+        <h3>運営者情報</h3>
+        <p>運営者: 金子 裕亮（個人開発）<br>連絡先: kaneko.yu03@gmail.com<br>所在地: 日本</p>
+
+        <p style="font-size:12px;opacity:.7">フォームが使えない場合:
+          <a href="mailto:kaneko.yu03@gmail.com?subject=%E3%80%90%E3%81%84%E3%81%BE%E3%81%AE%E7%A9%BA%E8%89%B2%E3%80%91%E4%B8%8D%E5%85%B7%E5%90%88%E5%A0%B1%E5%91%8A%E3%83%BB%E3%81%94%E8%A6%81%E6%9C%9B&body=%E2%96%A0%E7%A8%AE%E5%88%A5%EF%BC%88%E3%81%84%E3%81%9A%E3%82%8C%E3%81%8B%E3%82%92%E6%AE%8B%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%EF%BC%89%0A%E4%B8%8D%E5%85%B7%E5%90%88%E3%81%AE%E5%A0%B1%E5%91%8A%20/%20%E6%A9%9F%E8%83%BD%E3%81%AE%E3%81%94%E8%A6%81%E6%9C%9B%20/%20%E3%81%9D%E3%81%AE%E4%BB%96%0A%0A%E2%96%A0%E5%86%85%E5%AE%B9%0A%EF%BC%88%E4%B8%8D%E5%85%B7%E5%90%88%E3%81%AE%E5%A0%B4%E5%90%88%E3%81%AF%E3%80%8C%E3%81%A9%E3%81%AE%E7%94%BB%E9%9D%A2%E3%81%A7%E3%83%BB%E4%BD%95%E3%82%92%E3%81%97%E3%81%9F%E3%82%89%E3%83%BB%E3%81%A9%E3%81%86%E3%81%AA%E3%81%A3%E3%81%9F%E3%81%8B%E3%80%8D%E3%82%92%E3%81%94%E8%A8%98%E5%85%A5%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%EF%BC%89%0A%0A%0A%E2%96%A0%E3%81%8A%E4%BD%BF%E3%81%84%E3%81%AE%E6%A9%9F%E7%A8%AE%E3%83%BBiOS%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%EF%BC%88%E4%BB%BB%E6%84%8F%EF%BC%89%0A%E4%BE%8B%3A%20iPhone%2015%20/%20iOS%2026.2%0A" style="color:#9cc4ff">メールで送る</a></p>
+
+        <h3>規約・ポリシー（全文）</h3>
+        <p style="display:flex;flex-wrap:wrap;gap:8px">
+          <button class="dbtn weblink" data-url="https://imasora.app/terms.html">利用規約</button>
+          <button class="dbtn weblink" data-url="https://imasora.app/privacy.html">プライバシーポリシー</button>
+          <button class="dbtn weblink" data-url="https://imasora.app/about.html">運営者情報</button>
+        </p>
+
+        <p class="in-ver">いまの空色 v1.0.0</p>
+      </div>
+    </div>
+  </div>
+  <div id="stage" class="single">
+    <div class="panel" data-i="0">
+      <div class="ptop"><select></select></div>
+      <div class="pinfo">
+        <div class="pname"></div><div class="ploc"></div>
+        <div class="ptime"></div><div class="plux"></div><div class="pphase"></div>
+      </div>
+    </div>
+    <div class="panel" data-i="1">
+      <div class="ptop"><select></select></div>
+      <div class="pinfo">
+        <div class="pname"></div><div class="ploc"></div>
+        <div class="ptime"></div><div class="plux"></div><div class="pphase"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVGアイコン定義（stroke系ラインアイコン） -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-nav" viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2.5-7.5L3 11z"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 011 1v17l-7-4.5L5 21V4a1 1 0 011-1z"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="4" width="7.5" height="16" rx="1.5"/><rect x="13.5" y="4" width="7.5" height="16" rx="1.5"/></symbol>
+    <symbol id="i-single" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="1.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m3 0l-.8 12.1a2 2 0 01-2 1.9H8.8a2 2 0 01-2-1.9L6 7"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2M10 21v-3h4v3"/></symbol>
+  </svg>
+
   <div id="dock">
-    <button id="mode">⇆ 比較</button>
-    <input id="datep" type="date">
-    <input id="slider" type="range" min="0" max="1439" step="1" value="720">
-    <button id="clock" title="タップで時刻をホイールで選ぶ">現在</button>
+    <button id="locBtn" class="dbtn"><svg class="ic"><use href="#i-nav"/></svg>現在地</button>
+    <button id="placesBtn" class="dbtn"><svg class="ic"><use href="#i-bookmark"/></svg>地点登録</button>
+    <button id="mode" class="dbtn"><svg class="ic"><use href="#i-compare"/></svg>比較</button>
+    <input id="datep" type="date" aria-label="日付をえらぶ">
+    <div class="sliderwrap"><input id="slider" type="range" min="-1000" max="1000" step="1" value="0" aria-label="現在からの時間" tabindex="-1"><div id="sliderTouch"></div></div>
+    <button id="clock" class="dbtn" title="タップして時刻をえらぶ">--:--</button>
+    <button id="liveBtn" class="dbtn">現在</button>
   </div>
 
   <div id="tpick" class="hidden">
     <div class="tp-card">
       <div class="tp-head">
-        <button id="tpNow">現在</button>
         <span>時刻をえらぶ</span>
         <button id="tpDone">決定</button>
       </div>
@@ -166,71 +406,94 @@
     </div>
   </div>
 
+  <div id="sheet" class="hidden">
+    <div class="sh-card">
+      <div class="sh-head">
+        <h2>登録地点</h2>
+        <button id="shClose">閉じる</button>
+      </div>
+      <div class="sh-list" id="shList"></div>
+      <div class="sh-add">
+        <div class="sh-add-row">
+          <button class="dbtn" id="addHere"><svg class="ic"><use href="#i-nav"/></svg>現在地を登録</button>
+          <div class="sh-citywrap">
+            <button class="dbtn" id="addCity" tabindex="-1"><svg class="ic"><use href="#i-building"/></svg>都市から登録</button>
+            <select id="addCitySel" aria-label="都市を選択"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="welcome" class="hidden">
+    <div class="wl-name">いまの空色</div>
+    <p class="wl-desc">いまこの瞬間の空の色を、<br>太陽の位置から計算して表示します。<br>すべての計算は端末の中だけで行われます。</p>
+    <button id="wlStart" class="wl-start">はじめる</button>
+    <p class="wl-note">「はじめる」をタップすると、<button class="weblink" data-url="https://imasora.app/terms.html">利用規約</button>および<button class="weblink" data-url="https://imasora.app/privacy.html">プライバシーポリシー</button>に同意したものとみなされます。</p>
+  </div>
+
+  <div id="toast"></div>
+
+<script src="sky.js"></script>
 <script>
 "use strict";
-const RAD = Math.PI / 180;
-const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-const lerp = (a,b,t) => a + (b-a)*t;
+const { sunElevation, refract, skyColors, css } = window.Sky;
 
-/* ===== 太陽高度（緯度・経度・時刻から） ===== */
-function jdays(date){ return date.getTime()/86400000 + 2440587.5 - 2451545.0; }
-function sunElevation(date, lat, lon){
-  const d = jdays(date);
-  const g = (357.529 + 0.98560028*d)*RAD;
-  const q = 280.459 + 0.98564736*d;
-  const L = q + 1.915*Math.sin(g) + 0.020*Math.sin(2*g);
-  const Lr = L*RAD, e = (23.439 - 0.00000036*d)*RAD;
-  const ra = Math.atan2(Math.cos(e)*Math.sin(Lr), Math.cos(Lr)) / RAD;
-  const dec = Math.asin(Math.sin(e)*Math.sin(Lr)) / RAD;
-  const gmst = (280.46061837 + 360.98564736629*d) % 360;
-  const H = (((gmst + lon - ra) % 360)) * RAD;
-  const dr = dec*RAD, lr = lat*RAD;
-  return Math.asin(Math.sin(lr)*Math.sin(dr) + Math.cos(lr)*Math.cos(dr)*Math.cos(H)) / RAD;
-}
-/* 大気差（見かけの高度）と照度・明るさ */
-function refract(h){ if(h < -1) return h; return h + (1/Math.tan((h + 7.31/(h+4.4))*RAD))/60; }
-const TWILIGHT=[[3,3.65],[0,2.60],[-6,0.53],[-12,-2.10],[-18,-3.22]];
-const L_MIN=-3.22, L_MAX=Math.log10(133800);
-function log10Ill(h){
-  if(h>=3) return Math.log10(133800*Math.pow(Math.sin(Math.max(h,0.5)*RAD),1.15));
-  if(h<=-18) return L_MIN;
-  for(let i=0;i<TWILIGHT.length-1;i++){ const [h1,e1]=TWILIGHT[i], [h2,e2]=TWILIGHT[i+1];
-    if(h<=h1 && h>=h2) return e1+(e2-e1)*((h-h1)/(h2-h1)); }
-  return L_MIN;
-}
-const brightness = h => clamp((log10Ill(h)-L_MIN)/(L_MAX-L_MIN),0,1);
+/* ===== Capacitor ブリッジ（ネイティブ無し環境ではフォールバック） ===== */
+const Cap = window.Capacitor || {};
+const isNative = !!(Cap.isNativePlatform && Cap.isNativePlatform());
+const Plugins = Cap.Plugins || {};
+const APP_GROUP = 'group.com.kanekoyu.imasora.shared'; // ← capacitor.config と Xcode の App Group に合わせる
+const SHARE_URL = 'https://imasora.app'; // 宣伝トップ（ドメイン変更時はここだけ直す）
+const APP_DESC = '太陽の位置から、いまの空の色を計算して描くアプリ';
 
-/* ===== 空の色（色相と明るさを分離して合成） ===== */
-const SKY_STOPS=[
-  [-18,[0.06,0.10,0.30],[0.09,0.13,0.34],'夜'],
-  [-12,[0.10,0.16,0.42],[0.20,0.22,0.50],'天文薄明'],
-  [-8, [0.20,0.28,0.62],[0.48,0.36,0.66],'航海薄明'],
-  [-4, [0.35,0.40,0.75],[1.00,0.52,0.46],'市民薄明'],
-  [0,  [0.45,0.55,0.86],[1.00,0.62,0.35],'日の出/日の入り'],
-  [3,  [0.45,0.63,0.96],[1.00,0.78,0.55],'ゴールデンアワー'],
-  [10, [0.42,0.66,0.98],[0.75,0.86,1.00],'朝夕'],
-  [30, [0.30,0.55,1.00],[0.60,0.80,1.00],'昼'],
-  [60, [0.26,0.50,1.00],[0.55,0.75,1.00],'真昼'],
-];
-function skyTint(h){
-  const S=SKY_STOPS; let lo=S[0], hi=S[S.length-1];
-  if(h<=S[0][0]) return {top:S[0][1], bottom:S[0][2], phase:S[0][3]};
-  if(h>=hi[0]) return {top:hi[1], bottom:hi[2], phase:hi[3]};
-  for(let i=0;i<S.length-1;i++){ if(h>=S[i][0]&&h<S[i+1][0]){lo=S[i];hi=S[i+1];break;} }
-  const t=(h-lo[0])/(hi[0]-lo[0]);
-  const mix=(a,b)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
-  return {top:mix(lo[1],hi[1]), bottom:mix(lo[2],hi[2]), phase: t<0.5?lo[3]:hi[3]};
+function toast(msg, ms = 2600) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms);
 }
-const AMBIENT=[5,7,18];
-function skyColors(h){
-  const tint=skyTint(h), B=brightness(h);
-  const ap=c=>[AMBIENT[0]+c[0]*B*255, AMBIENT[1]+c[1]*B*255, AMBIENT[2]+c[2]*B*255];
-  return {top:ap(tint.top), bottom:ap(tint.bottom), phase:tint.phase, B, lux:Math.pow(10,log10Ill(h))};
+
+/* ===== 永続ストレージ（Capacitor Preferences / localStorage フォールバック） ===== */
+const Store = {
+  async get(key) {
+    try {
+      if (isNative && Plugins.Preferences) { const r = await Plugins.Preferences.get({ key }); return r.value; }
+    } catch (e) {}
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  },
+  async set(key, value) {
+    try {
+      if (isNative && Plugins.Preferences) { await Plugins.Preferences.set({ key, value }); return; }
+    } catch (e) {}
+    try { localStorage.setItem(key, value); } catch (e) {}
+  },
+};
+
+/* ===== 登録地点 ===== */
+let places = []; // [{id, name, lat, lon, tz}]
+async function loadPlaces() {
+  const raw = await Store.get('imasora_places');
+  try { places = raw ? JSON.parse(raw) : []; } catch (e) { places = []; }
+  if (!Array.isArray(places)) places = [];
 }
-const css = c => `rgb(${clamp(c[0]|0,0,255)},${clamp(c[1]|0,0,255)},${clamp(c[2]|0,0,255)})`;
+// App Group 共有領域へ書き込む（ウィジェットが読む。Preferences では書けないため WidgetsBridge を使う）
+async function shareToWidget(key, value) {
+  try {
+    if (isNative && Plugins.WidgetsBridgePlugin) {
+      await Plugins.WidgetsBridgePlugin.setItem({ key, value: String(value), group: APP_GROUP });
+    }
+  } catch (e) {}
+}
+async function savePlaces() {
+  await Store.set('imasora_places', JSON.stringify(places));
+  // ウィジェットの「編集」メニューの選択肢と表示を更新
+  await shareToWidget('imasora_places', JSON.stringify(places));
+  try { if (isNative && Plugins.WidgetsBridgePlugin) Plugins.WidgetsBridgePlugin.reloadAllTimelines?.(); } catch (e) {}
+}
+function placeById(id) { return places.find(p => p.id === id) || null; }
 
 /* ===== 都市データ ===== */
-const WORLD=[
+const WORLD = [
   ['ニューヨーク',40.7128,-74.0060,'America/New_York'],['ロサンゼルス',34.0522,-118.2437,'America/Los_Angeles'],
   ['ロンドン',51.5074,-0.1278,'Europe/London'],['パリ',48.8566,2.3522,'Europe/Paris'],
   ['ローマ',41.9028,12.4964,'Europe/Rome'],['ベルリン',52.5200,13.4050,'Europe/Berlin'],
@@ -242,7 +505,7 @@ const WORLD=[
   ['ホノルル',21.3069,-157.8583,'Pacific/Honolulu'],['サンパウロ',-23.5505,-46.6333,'America/Sao_Paulo'],
   ['レイキャビク',64.1466,-21.9426,'Atlantic/Reykjavik'],['ケープタウン',-33.9249,18.4241,'Africa/Johannesburg'],
 ];
-const PREF=[
+const PREF = [
   ['北海道（札幌）',43.0642,141.3469],['青森',40.8244,140.7400],['岩手（盛岡）',39.7036,141.1527],
   ['宮城（仙台）',38.2688,140.8721],['秋田',39.7186,140.1024],['山形',38.2404,140.3633],
   ['福島',37.7500,140.4676],['茨城（水戸）',36.3418,140.4468],['栃木（宇都宮）',36.5657,139.8836],
@@ -260,145 +523,562 @@ const PREF=[
   ['熊本',32.7898,130.7417],['大分',33.2382,131.6126],['宮崎',31.9111,131.4239],
   ['鹿児島',31.5602,130.5581],['沖縄（那覇）',26.2124,127.6809],
 ];
-function cityFromValue(v){
-  const [g,i]=v.split(':'); const idx=+i;
-  if(g==='w'){ const c=WORLD[idx]; return {name:c[0],lat:c[1],lon:c[2],tz:c[3]}; }
-  const c=PREF[idx]; return {name:c[0],lat:c[1],lon:c[2],tz:'Asia/Tokyo'};
+function cityFromValue(v) {
+  const [g, i] = v.split(':');
+  if (g === 's') { const p = placeById(i); return p ? { name: p.name, sub: p.sub || '', lat: p.lat, lon: p.lon, tz: p.tz } : null; }
+  const idx = +i;
+  if (g === 'w') { const c = WORLD[idx]; return { name: c[0], lat: c[1], lon: c[2], tz: c[3] }; }
+  const c = PREF[idx]; return { name: c[0], lat: c[1], lon: c[2], tz: 'Asia/Tokyo' };
 }
-function buildSelect(sel, value){
-  const g1=document.createElement('optgroup'); g1.label='🌍 世界の都市';
-  WORLD.forEach((c,i)=>{ const o=document.createElement('option'); o.value='w:'+i; o.textContent=c[0]; g1.appendChild(o); });
-  const g2=document.createElement('optgroup'); g2.label='🗾 都道府県';
-  PREF.forEach((c,i)=>{ const o=document.createElement('option'); o.value='p:'+i; o.textContent=c[0]; g2.appendChild(o); });
-  sel.appendChild(g1); sel.appendChild(g2); sel.value=value;
+function buildSelect(sel, value) {
+  sel.innerHTML = '';
+  const gc = document.createElement('optgroup'); gc.label = '現在地';
+  const oc = document.createElement('option'); oc.value = 'here'; oc.textContent = '現在地'; gc.appendChild(oc);
+  sel.appendChild(gc);
+  if (places.length) {
+    const gs = document.createElement('optgroup'); gs.label = '登録地点';
+    places.forEach(p => { const o = document.createElement('option'); o.value = 's:' + p.id; o.textContent = p.name; gs.appendChild(o); });
+    sel.appendChild(gs);
+  }
+  const g1 = document.createElement('optgroup'); g1.label = '世界の都市';
+  WORLD.forEach((c, i) => { const o = document.createElement('option'); o.value = 'w:' + i; o.textContent = c[0]; g1.appendChild(o); });
+  const g2 = document.createElement('optgroup'); g2.label = '都道府県';
+  PREF.forEach((c, i) => { const o = document.createElement('option'); o.value = 'p:' + i; o.textContent = c[0]; g2.appendChild(o); });
+  sel.appendChild(g1); sel.appendChild(g2);
+  if ([...sel.options].some(o => o.value === value)) sel.value = value;
 }
+// 登録地点の変更を両パネルのセレクトに反映（選択値は維持）
+function rebuildSelects() { panels.forEach(p => buildSelect(p.sel, p.value)); }
+
+/* 最寄りの登録地点名（オフラインで地名を出すため） */
+function nearestName(lat, lon) {
+  let best = null, bd = Infinity;
+  const all = [...PREF.map(c => [c[0], c[1], c[2]]), ...WORLD.map(c => [c[0], c[1], c[2]])];
+  for (const [name, la, lo] of all) {
+    const d = (la - lat) ** 2 + Math.cos(lat * Math.PI / 180) ** 2 * (lo - lon) ** 2;
+    if (d < bd) { bd = d; best = name; }
+  }
+  return best;
+}
+
+/* 現在地の状態 */
+let hereCity = null; // {name, lat, lon, tz}
 
 /* ===== タイムゾーン ===== */
-// tz上の指定日(ymd={y,mo,dd}; 省略時は今日) minutes分の壁時計時刻→実時刻
-function zonedWallToDate(tz, minutes, ymd){
-  const dtf=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-  let y,mo,dd;
-  if(ymd){ y=ymd.y; mo=ymd.mo; dd=ymd.dd; }
-  else { const np={}; dtf.formatToParts(new Date()).forEach(p=>np[p.type]=p.value); y=+np.year; mo=+np.month; dd=+np.day; }
-  const h=Math.floor(minutes/60), mi=minutes%60;
-  const wallUTC=Date.UTC(y,mo-1,dd,h,mi);
-  const off=ms=>{const m={};dtf.formatToParts(new Date(ms)).forEach(p=>m[p.type]=p.value);let hh=m.hour==='24'?0:+m.hour;return Date.UTC(+m.year,+m.month-1,+m.day,hh,+m.minute,+m.second)-ms;};
-  let r=wallUTC-off(wallUTC); r=wallUTC-off(r); return new Date(r);
+function guessTz() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tokyo'; } catch (e) { return 'Asia/Tokyo'; } }
+const localTimeStr = (date, tz) => new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(date);
+function todayMinutesInTz(tz) {
+  const s = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(new Date());
+  const m = /(\d{2}):(\d{2})/.exec(s); return m ? +m[1] * 60 + +m[2] : 720;
 }
-const localTimeStr=(date,tz)=> new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:tz}).format(date);
-const todayYMDStr=tz=> new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-function parseYMD(s){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?{y:+m[1],mo:+m[2],dd:+m[3]}:null; }
+/* 指定タイムゾーンでの年月日・時分に分解 */
+function tzParts(date, tz) {
+  const dtf = new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const o = {}; dtf.formatToParts(date).forEach(p => { o[p.type] = p.value; });
+  return { y: +o.year, mo: +o.month, d: +o.day, h: +o.hour % 24, mi: +o.minute, s: +o.second };
+}
+/* そのタイムゾーンの UTC からのオフセット（分） */
+function tzOffsetMin(tz, date) {
+  const p = tzParts(date, tz);
+  const asUTC = Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s);
+  return Math.round((asUTC - date.getTime()) / 60000);
+}
+/* 「その都市の現地時間で dateStr の minutes 分」に当たる瞬間（Date）を作る */
+function makeInstant(dateStr, minutes, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || '');
+  const now = new Date();
+  const y = m ? +m[1] : now.getFullYear(), mo = m ? +m[2] : now.getMonth() + 1, d = m ? +m[3] : now.getDate();
+  const guess = Date.UTC(y, mo - 1, d, Math.floor(minutes / 60), minutes % 60, 0);
+  let off = tzOffsetMin(tz, new Date(guess));
+  off = tzOffsetMin(tz, new Date(guess - off * 60000)); // 夏時間の境界を補正
+  return new Date(guess - off * 60000);
+}
+/* 時刻コントロールの基準タイムゾーン = メイン（上）パネルの都市 */
+function primaryTz() {
+  const p = panels && panels[0];
+  const c = p ? (p.value === 'here' ? hereCity : p.city) : null;
+  return (c && c.tz) || guessTz();
+}
 
 /* ===== パネル ===== */
-const panels=[...document.querySelectorAll('.panel')].map(el=>({
+const panels = [...document.querySelectorAll('.panel')].map(el => ({
   el, sel: el.querySelector('select'),
-  name: el.querySelector('.pname'), time: el.querySelector('.ptime'),
-  lux: el.querySelector('.plux'), phase: el.querySelector('.pphase'),
+  name: el.querySelector('.pname'), loc: el.querySelector('.ploc'),
+  time: el.querySelector('.ptime'), lux: el.querySelector('.plux'), phase: el.querySelector('.pphase'),
   city: null,
 }));
-
-function renderPanel(p, date){
-  if(!p.city) return;
-  const h = refract(sunElevation(date, p.city.lat, p.city.lon));
+function panelCity(p) { return p.value === 'here' ? hereCity : p.city; }
+function renderPanel(p, date) {
+  const c = p.city;
+  if (!c) { p.name.textContent = '現在地を取得中…'; return; }
+  const h = refract(sunElevation(date, c.lat, c.lon));
   const sky = skyColors(h);
   p.el.style.background = `linear-gradient(to bottom, ${css(sky.top)} 0%, ${css(sky.bottom)} 100%)`;
-  p.name.textContent = p.city.name;
-  p.time.textContent = localTimeStr(date, p.city.tz);
-  const lx = sky.lux>=100?Math.round(sky.lux).toLocaleString():sky.lux>=1?sky.lux.toFixed(1):sky.lux.toFixed(3);
+  p.name.textContent = c.name;
+  p.loc.textContent = c.sub || '';
+  p.time.textContent = localTimeStr(date, c.tz);
+  const lx = sky.lux >= 100 ? Math.round(sky.lux).toLocaleString() : sky.lux >= 1 ? sky.lux.toFixed(1) : sky.lux.toFixed(3);
   p.lux.textContent = `約 ${lx} lux`;
   p.phase.textContent = `${sky.phase}・高度 ${h.toFixed(1)}°`;
 }
 
-/* ===== モード（1都市 / 比較）===== */
-const stage=document.getElementById('stage'), modeBtn=document.getElementById('mode');
-let compare=false;
-function applyMode(){
+/* ===== モード ===== */
+const stage = document.getElementById('stage'), modeBtn = document.getElementById('mode');
+let compare = false;
+function applyMode() {
   stage.classList.toggle('single', !compare);
-  modeBtn.textContent = compare ? '◻ 1都市' : '⇆ 比較';
+  modeBtn.innerHTML = compare
+    ? '<svg class="ic"><use href="#i-single"/></svg>1都市'
+    : '<svg class="ic"><use href="#i-compare"/></svg>比較';
 }
-modeBtn.addEventListener('click', ()=>{ compare=!compare; applyMode(); renderAll(); });
+modeBtn.addEventListener('click', () => { compare = !compare; applyMode(); renderAll(); });
 
-/* ===== 時刻コントロール（スライダー＋時刻タップでホイール） ===== */
-let liveMode=true, clockTimer=null, selMin=720;
-const dateEl=document.getElementById('datep');
-const slider=document.getElementById('slider'), clockEl=document.getElementById('clock');
-const tpick=document.getElementById('tpick'), tpNow=document.getElementById('tpNow'), tpDone=document.getElementById('tpDone');
-
-function currentDate(){
-  if(liveMode) return new Date();
-  return zonedWallToDate(panels[0].city.tz, selMin, parseYMD(dateEl.value));
+/* ===== 時刻コントロール ===== */
+let liveMode = true, clockTimer = null, selMin = 720;
+const slider = document.getElementById('slider'), clockEl = document.getElementById('clock');
+const liveBtn = document.getElementById('liveBtn');
+const dateEl = document.getElementById('datep');
+function todayStr(tz) {
+  const p = tzParts(new Date(), tz || guessTz());
+  return `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
 }
-function renderAll(){ const d=currentDate(); panels.forEach(p=>renderPanel(p,d)); }
-function ensureTimer(){ if(clockTimer) clearInterval(clockTimer); if(liveMode) clockTimer=setInterval(renderAll,1000); }
-function hhmm(m){ return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
-// スライダー右の時刻表示に反映
-function syncControls(){
-  clockEl.innerHTML = liveMode ? '現在' : hhmm(selMin);
-  slider.value = selMin;
+/* 日付・時刻コントロールは常に「メイン都市の現地時間」を表す */
+function currentDate() {
+  if (liveMode) return new Date();
+  return makeInstant(dateEl.value || todayStr(primaryTz()), selMin, primaryTz());
 }
-function setLive(){ liveMode=true; dateEl.value=todayYMDStr(panels[0].city.tz); syncControls(); renderAll(); ensureTimer(); }
-function enterManual(){ liveMode=false; if(clockTimer) clearInterval(clockTimer); }
+function renderAll() { const d = currentDate(); panels.forEach(p => renderPanel(p, d)); }
+function hhmm(m) { return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
 
-// スライダー操作
-slider.addEventListener('input', ()=>{ enterManual(); selMin=+slider.value; syncControls(); renderAll(); });
-
-/* --- ホイール部品 --- */
-const ITEM_H=40;
-function makeWheel(el, count, onSettle){
-  el.innerHTML='';
-  const list=document.createElement('div');
-  const spacer=()=>{ const s=document.createElement('div'); s.style.height=(ITEM_H*2)+'px'; return s; };
-  list.appendChild(spacer());
-  for(let i=0;i<count;i++){ const d=document.createElement('div'); d.className='witem'; d.textContent=String(i).padStart(2,'0'); list.appendChild(d); }
-  list.appendChild(spacer());
-  el.appendChild(list);
-  const items=[...list.querySelectorAll('.witem')];
-  function paint(){
-    const idx=el.scrollTop/ITEM_H;
-    items.forEach((it,i)=>{ const dist=Math.abs(i-idx);
-      it.style.opacity=Math.max(0.12,1-dist*0.26);
-      it.style.transform=`scale(${Math.max(0.65,1-dist*0.13)})`; });
+/* スライダーは「現在からのオフセット」式: 中央=現在、±12時間。
+   3乗カーブで中央付近ほど細かい（中央付近≒1分未満/目盛り、端≒4分/目盛り） */
+const SLIDER_RANGE = 720; // ±12時間（分）
+const clampNum = (v, a, b) => Math.max(a, Math.min(b, v));
+function rawToOffset(raw) {
+  const v = raw / 1000;
+  return Math.sign(v) * Math.pow(Math.abs(v), 3) * SLIDER_RANGE;
+}
+function offsetToRaw(off) {
+  const o = clampNum(off, -SLIDER_RANGE, SLIDER_RANGE) / SLIDER_RANGE;
+  return Math.round(Math.sign(o) * Math.pow(Math.abs(o), 1 / 3) * 1000);
+}
+/* スライダーの基準点:
+   'now'  = 中央が現在（今日・ライブ時。±12hで日付またぎあり）
+   'noon' = 中央がその日の正午（日付指定時。0時〜24時、日付固定） */
+let sliderAnchor = 'now';
+function applySliderRaw(raw) {
+  enterManual();
+  if (sliderAnchor === 'noon') {
+    selMin = clampNum(Math.round(720 + rawToOffset(raw)), 0, 1439);
+  } else {
+    const t = new Date(Date.now() + rawToOffset(raw) * 60000);
+    const p = tzParts(t, primaryTz());
+    dateEl.value = `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
+    selMin = p.h * 60 + p.mi;
   }
-  let t, controller={ get index(){ return clamp(Math.round(el.scrollTop/ITEM_H),0,count-1); },
-    set index(i){ el.scrollTop=clamp(i,0,count-1)*ITEM_H; paint(); } };
-  el.addEventListener('scroll', ()=>{ paint(); clearTimeout(t);
-    t=setTimeout(()=>{ const idx=controller.index; el.scrollTo({top:idx*ITEM_H,behavior:'smooth'}); onSettle(idx); }, 110); });
-  controller.repaint=paint;
-  return controller;
+  syncControls(); renderAll();
 }
-const wheelH=makeWheel(document.getElementById('wheelH'), 24, ()=>applyWheel());
-const wheelM=makeWheel(document.getElementById('wheelM'), 60, ()=>applyWheel());
-function applyWheel(){ enterManual(); selMin=wheelH.index*60+wheelM.index; syncControls(); renderAll(); }
-
-function openPicker(){
-  // 開始値: 手動ならselMin、現在なら対象都市の今の時刻
-  let base=selMin;
-  if(liveMode){ const s=localTimeStr(new Date(), panels[0].city.tz); const mm=/(\d{2}):(\d{2})/.exec(s); if(mm) base=+mm[1]*60+ +mm[2]; }
-  tpick.classList.remove('hidden');
-  requestAnimationFrame(()=>{ wheelH.index=Math.floor(base/60); wheelM.index=base%60; });
+function syncControls() {
+  if (liveMode) selMin = todayMinutesInTz(primaryTz());
+  clockEl.textContent = hhmm(selMin);
+  if (liveMode) slider.value = 0;
+  else if (sliderAnchor === 'noon') slider.value = offsetToRaw(selMin - 720);
+  else slider.value = offsetToRaw((currentDate() - Date.now()) / 60000);
+  liveBtn.classList.toggle('on', liveMode);
 }
-function closePicker(){ tpick.classList.add('hidden'); }
-clockEl.addEventListener('click', openPicker);
-tpDone.addEventListener('click', closePicker);
-tpNow.addEventListener('click', ()=>{ setLive(); closePicker(); });
-tpick.addEventListener('click', e=>{ if(e.target===tpick) closePicker(); });
-
-dateEl.addEventListener('change', ()=>{
-  // 日付を選んだら手動モードへ（「現在」だった場合は12:00に）
-  if(liveMode){ enterManual(); selMin=720; }
+function ensureTimer() {
+  if (clockTimer) clearInterval(clockTimer);
+  if (liveMode) clockTimer = setInterval(() => { syncControls(); renderAll(); }, 1000);
+}
+function setLive() { liveMode = true; sliderAnchor = 'now'; dateEl.value = todayStr(primaryTz()); syncControls(); renderAll(); ensureTimer(); }
+function enterManual() { liveMode = false; if (clockTimer) clearInterval(clockTimer); liveBtn.classList.remove('on'); }
+liveBtn.addEventListener('click', setLive);
+dateEl.addEventListener('change', () => {
+  if (!dateEl.value || dateEl.value === todayStr(primaryTz())) { setLive(); return; } // 今日（都市の現地日付）を選び直したら現在に戻る
+  // 別の日付を選んだら: スライダーは正午センターに切り替え
+  sliderAnchor = 'noon';
+  enterManual();
+  selMin = 720;
   syncControls(); renderAll();
 });
 
-/* ===== 初期化 ===== */
-function initPanel(p, value){
-  buildSelect(p.sel, value);
-  p.city=cityFromValue(value);
-  p.sel.addEventListener('change', ()=>{ p.city=cityFromValue(p.sel.value); renderAll(); });
+/* --- ホイール時刻ピッカー --- */
+const tpick = document.getElementById('tpick'), tpDone = document.getElementById('tpDone');
+const ITEM_H = 40;
+function makeWheel(el, count, onSettle) {
+  el.innerHTML = '';
+  const list = document.createElement('div');
+  const spacer = () => { const s = document.createElement('div'); s.style.height = (ITEM_H * 2) + 'px'; return s; };
+  list.appendChild(spacer());
+  for (let i = 0; i < count; i++) { const d = document.createElement('div'); d.className = 'witem'; d.textContent = String(i).padStart(2, '0'); list.appendChild(d); }
+  list.appendChild(spacer());
+  el.appendChild(list);
+  const items = [...list.querySelectorAll('.witem')];
+  function paint() {
+    const idx = el.scrollTop / ITEM_H;
+    items.forEach((it, i) => { const dist = Math.abs(i - idx);
+      it.style.opacity = Math.max(0.12, 1 - dist * 0.26);
+      it.style.transform = `scale(${Math.max(0.65, 1 - dist * 0.13)})`; });
+  }
+  let t;
+  const controller = {
+    get index() { return clamp(Math.round(el.scrollTop / ITEM_H), 0, count - 1); },
+    set index(i) { el.scrollTop = clamp(i, 0, count - 1) * ITEM_H; paint(); },
+  };
+  el.addEventListener('scroll', () => { paint(); clearTimeout(t);
+    t = setTimeout(() => { const idx = controller.index; el.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' }); onSettle(idx); }, 110); });
+  return controller;
 }
-initPanel(panels[0], 'p:0');   // 札幌
-initPanel(panels[1], 'p:46');  // 那覇
-applyMode();
-setLive();
+const { clamp } = window.Sky;
+const wheelH = makeWheel(document.getElementById('wheelH'), 24, applyWheel);
+const wheelM = makeWheel(document.getElementById('wheelM'), 60, applyWheel);
+function applyWheel() { enterManual(); selMin = wheelH.index * 60 + wheelM.index; syncControls(); renderAll(); }
+function openPicker() {
+  const base = selMin;
+  tpick.classList.remove('hidden');
+  requestAnimationFrame(() => { wheelH.index = Math.floor(base / 60); wheelM.index = base % 60; });
+}
+function closePicker() { tpick.classList.add('hidden'); }
+clockEl.addEventListener('click', openPicker);
+tpDone.addEventListener('click', closePicker);
+tpick.addEventListener('click', e => { if (e.target === tpick) closePicker(); });
+
+/* --- スライダー操作（透明タッチ層で全入力を受ける）---
+   ネイティブのスライダー操作とは競合しない。マウス・タッチ共通。
+   ドラッグ中に指を上下に離すほど感度が下がる（3乗カーブと重ねがけ可能） */
+(() => {
+  const touchEl = document.getElementById('sliderTouch');
+  let st = null, hinted = false;
+  touchEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const rect = slider.getBoundingClientRect();
+    const raw = clampNum(Math.round((e.clientX - rect.left) / rect.width * 2000 - 1000), -1000, 1000);
+    st = { lastX: e.clientX, y0: e.clientY, val: raw };
+    try { touchEl.setPointerCapture(e.pointerId); } catch (err) {}
+    applySliderRaw(raw);
+    if (!hinted && e.pointerType === 'touch') { hinted = true; toast('指を上下にずらすとさらに微調整できます'); }
+  });
+  touchEl.addEventListener('pointermove', e => {
+    if (!st) return;
+    e.preventDefault();
+    const rect = slider.getBoundingClientRect();
+    const dy = Math.abs(e.clientY - st.y0);
+    const sens = dy < 35 ? 1 : dy < 80 ? 0.25 : 0.08;
+    st.val = clampNum(st.val + (e.clientX - st.lastX) / rect.width * 2000 * sens, -1000, 1000);
+    st.lastX = e.clientX;
+    applySliderRaw(Math.round(st.val));
+  });
+  const endScrub = () => { st = null; };
+  touchEl.addEventListener('pointerup', endScrub);
+  touchEl.addEventListener('pointercancel', endScrub);
+})();
+
+/* ===== 現在地取得 ===== */
+async function getPosition() {
+  if (isNative && Plugins.Geolocation) {
+    const perm = await Plugins.Geolocation.requestPermissions().catch(() => null);
+    const pos = await Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000 });
+    return { lat: pos.coords.latitude, lon: pos.coords.longitude };
+  }
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej(new Error('no geolocation'));
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: p.coords.latitude, lon: p.coords.longitude }),
+      err => rej(err), { enableHighAccuracy: false, timeout: 10000 });
+  });
+}
+// 緯度経度→市区町村名（iOS標準の逆ジオ）。{data} か {err} を返す
+async function reverseGeocode(lat, lon) {
+  if (!isNative) return { err: 'not-native' };
+  if (!Plugins.Geocode) return { err: 'no-plugin' };
+  try {
+    const r = await Plugins.Geocode.reverse({ lat, lon });
+    if (r && r.name) return { data: r };
+    return { err: 'empty' };
+  } catch (e) { return { err: 'geo-fail: ' + (e && e.message ? e.message : e) }; }
+}
+async function updateLocation(announce) {
+  try {
+    const { lat, lon } = await getPosition();
+    const tz = guessTz();
+    // まず内蔵リストの最寄りで即表示（オフライン即応）
+    hereCity = { name: '現在地', sub: `${nearestName(lat, lon)}付近 ・ ${lat.toFixed(2)}, ${lon.toFixed(2)}`, lat, lon, tz };
+    panels.forEach(p => { if (p.value === 'here') p.city = hereCity; });
+    if (panels[0].value !== 'here') { panels[0].value = 'here'; panels[0].sel.value = 'here'; panels[0].city = hereCity; }
+    renderAll();
+    saveForWidget(lat, lon, hereCity.sub);
+    // 続けて正確な地名に置き換え（ネット接続時）
+    const gr = await reverseGeocode(lat, lon);
+    if (gr.data) {
+      const g = gr.data;
+      hereCity.name = g.name;
+      hereCity.sub = g.full || '現在地';
+      panels.forEach(p => { if (p.value === 'here') p.city = hereCity; });
+      renderAll();
+      saveForWidget(lat, lon, hereCity.sub);
+      if (announce) toast(`現在地を更新しました（${g.name}）`);
+    } else if (announce) {
+      // ブラウザ版など逆ジオコーディング非対応環境では内蔵の最寄り地名で確定
+      if (gr.err === 'not-native' || gr.err === 'no-plugin') toast('現在地を更新しました');
+      else toast(`地名取得できず: ${gr.err}`);
+    }
+  } catch (e) {
+    if (announce) toast('位置情報を取得できませんでした。設定で許可を確認してください。');
+    // フォールバック: 東京
+    if (!hereCity) {
+      const c = PREF[12]; hereCity = { name: '現在地（未取得）', sub: '東京を仮表示', lat: c[1], lon: c[2], tz: 'Asia/Tokyo' };
+      panels.forEach(p => { if (p.value === 'here') p.city = hereCity; }); renderAll();
+    }
+  }
+}
+document.getElementById('locBtn').addEventListener('click', () => updateLocation(true));
+
+/* ===== ウィジェット用にApp Group共有ストレージへ保存 ===== */
+async function saveForWidget(lat, lon, sub) {
+  try {
+    await shareToWidget('imasora_lat', lat);
+    await shareToWidget('imasora_lon', lon);
+    await shareToWidget('imasora_sub', sub || '');
+    // ウィジェットのタイムラインを再読み込み
+    if (isNative && Plugins.WidgetsBridgePlugin) {
+      Plugins.WidgetsBridgePlugin.reloadAllTimelines?.();
+    }
+  } catch (e) { /* noop */ }
+}
+
+/* ===== 登録地点シート ===== */
+const sheet = document.getElementById('sheet');
+const shList = document.getElementById('shList');
+const addCitySel = document.getElementById('addCitySel');
+
+// 1タップで登録（同名はスキップ）
+async function addPlace(name, lat, lon, tz, sub) {
+  if (places.some(p => p.name === name)) { toast(`「${name}」は登録済みです`); return; }
+  places.push({ id: String(Date.now()), name, lat, lon, tz, sub });
+  await savePlaces(); rebuildSelects(); renderPlaces();
+  toast(`「${name}」を登録しました`);
+}
+
+function swatchGradient(lat, lon) {
+  const h = refract(sunElevation(new Date(), lat, lon));
+  const s = skyColors(h);
+  return `linear-gradient(to bottom, ${css(s.top)}, ${css(s.bottom)})`;
+}
+function renderPlaces() {
+  shList.innerHTML = '';
+  if (!places.length) {
+    const e = document.createElement('div'); e.className = 'sh-empty';
+    e.textContent = 'まだ登録地点はありません。\n下のボタンから追加できます。';
+    e.style.whiteSpace = 'pre-line'; shList.appendChild(e); return;
+  }
+  places.forEach(p => {
+    const row = document.createElement('div'); row.className = 'sh-row';
+    const sw = document.createElement('div'); sw.className = 'sh-sw'; sw.style.background = swatchGradient(p.lat, p.lon);
+    const meta = document.createElement('div'); meta.className = 'sh-meta';
+    const nm = document.createElement('div'); nm.className = 'sh-name'; nm.textContent = p.name;
+    const sb = document.createElement('div'); sb.className = 'sh-sub'; sb.textContent = p.sub || `${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
+    meta.appendChild(nm); meta.appendChild(sb);
+    const go = document.createElement('button'); go.className = 'sh-go'; go.textContent = '表示';
+    go.addEventListener('click', () => showPlace(p));
+    const del = document.createElement('button'); del.className = 'sh-del';
+    del.innerHTML = '<svg class="ic" style="width:17px;height:17px"><use href="#i-trash"/></svg>';
+    del.addEventListener('click', async () => {
+      if (!window.confirm(`「${p.name}」を削除しますか？`)) return;
+      places = places.filter(x => x.id !== p.id);
+      await savePlaces(); rebuildSelects(); renderPlaces();
+      toast(`「${p.name}」を削除しました`);
+    });
+    row.appendChild(sw); row.appendChild(meta); row.appendChild(go); row.appendChild(del);
+    shList.appendChild(row);
+  });
+}
+function showPlace(p) {
+  panels[0].value = 's:' + p.id; panels[0].sel.value = 's:' + p.id;
+  panels[0].city = cityFromValue('s:' + p.id);
+  renderAll(); closeSheet();
+  toast(`「${p.name}」を表示中`);
+}
+function openSheet() { renderPlaces(); resetAddUI(); sheet.classList.remove('hidden'); }
+function closeSheet() { sheet.classList.add('hidden'); resetAddUI(); }
+function resetAddUI() { addCitySel.selectedIndex = -1; }
+
+/* ===== シェア（いまの空をカード画像にしてOSのシェアシートへ） ===== */
+const shareEl = document.getElementById('share');
+const shPrev = document.getElementById('shPrev');
+const shSeg = document.getElementById('shSeg');
+let shareLevel = localStorage.getItem('imasora_share_level') || 'city'; // 既定は市区町村（プライバシー配慮）
+
+/* 粒度に応じた地名表示。sub は「兵庫県 芦屋市 打出小槌町」のような空白区切り */
+function placeLabel(c, level) {
+  if (level === 'off') return null;
+  // 座標や「・」を含むトークンで打ち切る（pref/city で座標が出ないように）
+  let toks = (c.sub || '').trim().split(/\s+/).filter(Boolean);
+  const cut = toks.findIndex(t => t === '・' || /^[0-9.,\-]+$/.test(t));
+  const clean = cut === -1 ? toks : toks.slice(0, cut);
+  if (level === 'pref') return { main: clean[0] || c.name, sub: '' };
+  if (level === 'city') return { main: clean.slice(0, 2).join(' ') || c.name, sub: '' };
+  return { main: c.name, sub: c.sub || '' }; // full
+}
+
+function shareInfo() {
+  const c = panels[0] && panels[0].city;
+  if (!c) return null;
+  const date = currentDate();
+  const h = refract(sunElevation(date, c.lat, c.lon));
+  return { c, date, h, sky: skyColors(h) };
+}
+function drawShareCard(canvas, level) {
+  const d = shareInfo();
+  if (!d) return false;
+  const W = 1080, H = 1920;
+  canvas.width = W; canvas.height = H;
+  const x = canvas.getContext('2d');
+  const gr = x.createLinearGradient(0, 0, 0, H);
+  gr.addColorStop(0, css(d.sky.top));
+  gr.addColorStop(1, css(d.sky.bottom));
+  x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  x.textAlign = 'center'; x.fillStyle = '#fff';
+  x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowBlur = 22;
+  const F = (w, s) => `${w} ${s}px -apple-system, "Hiragino Sans", sans-serif`;
+  const dateStr = new Intl.DateTimeFormat('ja-JP', { timeZone: d.c.tz, year: 'numeric', month: 'long', day: 'numeric' }).format(d.date);
+  x.globalAlpha = .85; x.font = F(600, 40); x.fillText(dateStr, W / 2, 690);
+  const label = placeLabel(d.c, level);
+  if (label) {
+    x.globalAlpha = 1; x.font = F(700, 62); x.fillText(label.main, W / 2, 800);
+    if (label.sub) { x.globalAlpha = .8; x.font = F(500, 34); x.fillText(label.sub, W / 2, 856); }
+  }
+  x.globalAlpha = 1; x.font = F(200, 196);
+  x.fillText(localTimeStr(d.date, d.c.tz), W / 2, 1080);
+  const lx = d.sky.lux >= 100 ? Math.round(d.sky.lux).toLocaleString() : d.sky.lux >= 1 ? d.sky.lux.toFixed(1) : d.sky.lux.toFixed(3);
+  x.globalAlpha = .9; x.font = F(500, 46); x.fillText(`約 ${lx} lux`, W / 2, 1170);
+  x.globalAlpha = .85; x.font = F(500, 42); x.fillText(`${d.sky.phase}・高度 ${d.h.toFixed(1)}°`, W / 2, 1232);
+  x.globalAlpha = .95; x.font = F(800, 44); x.fillText('いまの空色', W / 2, 1780);
+  x.globalAlpha = .7; x.font = F(500, 32); x.fillText(new URL(SHARE_URL).hostname, W / 2, 1832);
+  x.globalAlpha = 1;
+  return true;
+}
+function openShare() {
+  if (!drawShareCard(shPrev, shareLevel)) { toast('地点を取得しています…'); return; }
+  shareEl.classList.remove('hidden');
+}
+async function doShare() {
+  const cv = document.createElement('canvas');
+  if (!drawShareCard(cv, shareLevel)) return;
+  const dataUrl = cv.toDataURL('image/png');
+  const info = shareInfo();
+  if (!info) { toast('地点を取得しています…'); return; }
+  const label = placeLabel(info.c, shareLevel);
+  const firstLine = label
+    ? `${label.main}の空、いま「${info.sky.phase}」。`
+    : `いまの空、「${info.sky.phase}」。`;
+  const text = `${firstLine}\nいまの空色 — ${APP_DESC}\n${SHARE_URL}\n#いまの空色`;
+  try {
+    if (isNative && Plugins.Filesystem && Plugins.Share) {
+      const w = await Plugins.Filesystem.writeFile({ path: `imasora-share.png`, data: dataUrl.split(',')[1], directory: 'CACHE' });
+      await Plugins.Share.share({ text, files: [w.uri] });
+    } else if (navigator.share) {
+      const blob = await (await fetch(dataUrl)).blob();
+      await navigator.share({ files: [new File([blob], 'imasora.png', { type: 'image/png' })], text });
+    } else { toast('この環境ではシェアできません'); return; }
+    shareEl.classList.add('hidden');
+  } catch (e) { /* ユーザーがキャンセルした場合は何もしない */ }
+}
+document.getElementById('shareBtn').addEventListener('click', openShare);
+document.getElementById('shClose').addEventListener('click', () => shareEl.classList.add('hidden'));
+shareEl.addEventListener('click', e => { if (e.target === shareEl) shareEl.classList.add('hidden'); });
+const shSegBtns = [...shSeg.querySelectorAll('button')];
+function syncSeg() { shSegBtns.forEach(b => b.classList.toggle('on', b.dataset.level === shareLevel)); }
+shSegBtns.forEach(b => b.addEventListener('click', () => {
+  shareLevel = b.dataset.level;
+  localStorage.setItem('imasora_share_level', shareLevel);
+  syncSeg();
+  drawShareCard(shPrev, shareLevel);
+}));
+syncSeg();
+document.getElementById('shDo').addEventListener('click', doShare);
+
+/* 情報シート */
+const infoEl = document.getElementById('info');
+document.getElementById('infoBtn').addEventListener('click', () => infoEl.classList.remove('hidden'));
+document.getElementById('inClose').addEventListener('click', () => infoEl.classList.add('hidden'));
+infoEl.addEventListener('click', e => { if (e.target === infoEl) infoEl.classList.add('hidden'); });
+// 外部リンクは Safari (SFSafariViewController) で開く
+document.querySelectorAll('.weblink').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const url = btn.dataset.url;
+    try {
+      if (isNative && Plugins.Browser) { await Plugins.Browser.open({ url }); return; }
+    } catch (e) {}
+    window.open(url, '_blank');
+  });
+});
+
+document.getElementById('placesBtn').addEventListener('click', openSheet);
+document.getElementById('shClose').addEventListener('click', closeSheet);
+sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
+
+// 現在地を登録（1タップ）
+document.getElementById('addHere').addEventListener('click', async () => {
+  try {
+    const { lat, lon } = await getPosition();
+    const g = (await reverseGeocode(lat, lon)).data || null;
+    const name = g && g.name ? g.name : nearestName(lat, lon);
+    const sub = g && g.full ? g.full : `${nearestName(lat, lon)}付近 ・ ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    await addPlace(name, lat, lon, guessTz(), sub);
+  } catch (e) { toast('現在地を取得できませんでした'); }
+});
+// 都市から登録: ボタン上の透明セレクトがタップで直接開き、選んだ瞬間に登録
+addCitySel.addEventListener('change', async () => {
+  const c = cityFromValue(addCitySel.value); if (!c) return;
+  await addPlace(c.name, c.lat, c.lon, c.tz, c.name);
+  resetAddUI(); // 同じ都市を続けて選べるよう選択をリセット
+});
+
+function fillCitySelect() {
+  addCitySel.innerHTML = '';
+  const g2 = document.createElement('optgroup'); g2.label = '都道府県';
+  PREF.forEach((c, i) => { const o = document.createElement('option'); o.value = 'p:' + i; o.textContent = c[0]; g2.appendChild(o); });
+  const g1 = document.createElement('optgroup'); g1.label = '世界の都市';
+  WORLD.forEach((c, i) => { const o = document.createElement('option'); o.value = 'w:' + i; o.textContent = c[0]; g1.appendChild(o); });
+  addCitySel.appendChild(g2); addCitySel.appendChild(g1);
+}
+
+/* ===== 初期化 ===== */
+function initPanel(p, value) {
+  buildSelect(p.sel, value);
+  p.value = value;
+  p.city = value === 'here' ? hereCity : cityFromValue(value);
+  p.sel.addEventListener('change', () => {
+    p.value = p.sel.value;
+    p.city = p.value === 'here' ? hereCity : cityFromValue(p.value);
+    if (p.value === 'here' && !hereCity) updateLocation(false);
+    if (p === panels[0] && liveMode) dateEl.value = todayStr(primaryTz()); // 基準都市が変わったら日付表示も現地に
+    syncControls(); renderAll();
+  });
+}
+async function boot() {
+  await loadPlaces();
+  fillCitySelect();
+  initPanel(panels[0], 'here');
+  initPanel(panels[1], 'p:12'); // 東京（比較用の初期値）
+  applyMode();
+  setLive();
+  // 初回起動: ウェルカム画面（利用規約への同意）を表示。
+  // 位置情報の許可ダイアログは「はじめる」の後に出す。
+  const agreed = await Store.get('imasora_agreed');
+  if (!agreed) {
+    const wl = document.getElementById('welcome');
+    wl.classList.remove('hidden');
+    document.getElementById('wlStart').addEventListener('click', async () => {
+      wl.classList.add('hidden');
+      await Store.set('imasora_agreed', '1');
+      updateLocation(false);
+    }, { once: true });
+  } else {
+    updateLocation(false);
+  }
+}
+boot();
 </script>
 </body>
 </html>
