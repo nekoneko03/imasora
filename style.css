@@ -275,7 +275,33 @@ table.stops td {
   .doc p, .doc li { font-size: 0.9rem; }
   td { padding: 8px 10px; font-size: 0.82rem; }
   footer { line-height: 2.4; }
+  .site-nav .nav-brand {
+    font-size: 0.9rem;
+    gap: 6px;
+  }
+  .site-nav .nav-brand .logo-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .site-nav .nav-brand .logo-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+  .site-nav .nav-wrap {
+    padding-inline: 12px;
+    gap: 12px;
+  }
 }
+
+@media (max-width: 500px) {
+  /* スマホ画面幅での崩れを防ぐため、補助的なナビゲーションリンクを非表示にする */
+  .site-nav .nav-links a[href="/engine.html"],
+  .site-nav .nav-links a[href="/about.html"],
+  .site-nav .nav-links a[href="/terms.html"] {
+    display: none;
+  }
+}
+
 
 /* --- Smooth Scroll --- */
 @media (prefers-reduced-motion: no-preference) {

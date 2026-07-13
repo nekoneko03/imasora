@@ -112,6 +112,38 @@ h1, h2, h3 { color: var(--text); text-wrap: balance; margin: 0; }
 .nav .cta-min { display: flex; gap: 10px; align-items: center; }
 @media (max-width: 760px) { .nav .links { display: none; } }
 
+@media (max-width: 600px) {
+  .nav .wrap {
+    gap: 12px;
+    padding-inline: 16px;
+  }
+  .brand {
+    font-size: 1rem;
+    gap: 8px;
+  }
+  .brand .logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .nav .cta-min {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 500px) {
+  .nav .cta-min .btn-ghost {
+    display: none; /* スマホ画面幅では「計算の詳細」ボタンを非表示にして崩れを防ぐ */
+  }
+  .brand {
+    white-space: nowrap; /* 「いまの空色」の改行を防ぐ */
+  }
+  .btn-sm {
+    padding: 7px 11px;
+    font-size: 0.8rem;
+  }
+}
+
+
 /* =========================================================
    Buttons
    ========================================================= */
