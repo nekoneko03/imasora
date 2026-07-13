@@ -19,3 +19,25 @@ textarea { min-height: 140px; }
 button { margin-top: 20px; padding: 12px 24px; border-radius: 12px; border: none;
   background: #4a6fb5; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
 button:hover { background: #5a80c8; }
+
+/* ===== レスポンシブ土台（PC・スマホ共通で崩れないように） ===== */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; overflow-x: hidden; } /* iOSの文字自動拡大と全幅要素の横スクロールを抑止 */
+body { overflow-wrap: break-word; word-break: break-word; }
+img, svg, canvas, video { max-width: 100%; height: auto; }
+/* 長いURLなどがはみ出さないように */
+a { overflow-wrap: anywhere; }
+/* 表は画面幅を超えたら折り返し、それでも収まらなければ表単位で横スクロール */
+table { max-width: 100%; }
+td, th { word-break: break-word; }
+
+@media (max-width: 600px) {
+  body { padding: 28px 16px; }
+  h1 { font-size: 21px; }
+  h2 { font-size: 16px; }
+  p, li { font-size: 14.5px; }
+  td { padding: 7px 10px; font-size: 13px; }
+  nav a { display: inline-block; margin: 0 12px 6px 0; }
+  /* footer のリンクが1行に詰まらないように行間を確保 */
+  footer { line-height: 2.2; }
+}
