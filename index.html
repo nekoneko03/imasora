@@ -388,6 +388,8 @@ section { padding: clamp(56px, 8vw, 92px) 0; }
   font-weight: 800; letter-spacing: -0.02em;
   margin-top: 10px;
 }
+/* 日本語見出し: 単語の途中で折り返さず、句の切れ目でだけ改行する */
+h2 .wb { display: inline-block; }
 .sec-head p { margin: 12px 0 0; font-size: 1.02rem; color: var(--lp-body); }
 
 .grid {
@@ -680,7 +682,7 @@ footer {
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">特徴</div>
-      <h2>空の色を、科学で読み解く。</h2>
+      <h2><span class="wb">空の色を、</span><span class="wb">科学で読み解く。</span></h2>
       <p>太陽の位置と大気の散乱モデルから、人間の目に映る空色を忠実に計算。日の出・日の入り・薄明のグラデーションをリアルタイムで描画します。</p>
     </div>
     <div class="grid">
@@ -730,7 +732,7 @@ footer {
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">仕組み</div>
-      <h2>太陽の位置から、空色を計算するまで。</h2>
+      <h2><span class="wb">太陽の位置から、</span><span class="wb">空色を計算するまで。</span></h2>
       <p>緯度・経度・時刻の3つのパラメータから、物理モデルで空の色を導きます。</p>
     </div>
     <div class="steps">
@@ -756,7 +758,7 @@ footer {
 <!-- ===== CTA Band ===== -->
 <section class="cta-band" id="try">
   <div class="wrap reveal">
-    <h2>いま、あなたの空を見てみよう。</h2>
+    <h2><span class="wb">いま、</span><span class="wb">あなたの空を見てみよう。</span></h2>
     <p>ブラウザで動くWeb版ですぐに体験できます。<br>iOSアプリは近日公開予定。</p>
     <div class="actions">
       <a class="btn btn-onink" href="/app">Web版を開く <span class="arw">→</span></a>
