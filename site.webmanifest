@@ -1,0 +1,13 @@
+{
+  "name": "いまの空色",
+  "short_name": "いまの空色",
+  "description": "太陽の位置から、いまの空の色を計算して描くアプリ。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0c14",
+  "theme_color": "#0a0c14",
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
