@@ -853,22 +853,12 @@ footer {
     return o.hour + ':' + o.minute;
   }
 
-  // 星の位置（決定的に一度だけ生成 → チラつき防止）
-  var STARS = (function () {
-    var a = [], seed = 20260714;
-    function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
-    for (var i = 0; i < 46; i++) {
-      a.push({ x: rnd(), y: rnd() * 0.72, r: 0.4 + rnd() * 1.1, a: 0.35 + rnd() * 0.55 });
-    }
-    return a;
-  })();
-
   function render() {
     var now = new Date();
     var h = Sky.refract(Sky.sunElevation(now, lat, lon));
     var colors = Sky.skyColors(h);
 
-    // Canvas gradient
+    // 空色 = アプリ本体と同じ「上端色→下端色」の縦グラデーション一枚
     var dpr = window.devicePixelRatio || 1;
     var rect = canvas.parentElement.getBoundingClientRect();
     var w = rect.width, ht = rect.height;
@@ -881,40 +871,6 @@ footer {
     grad.addColorStop(1, Sky.css(colors.bottom));
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, ht);
-
-    // 星（薄明〜夜のみ、-3°で出はじめ -12°で最大）
-    if (h < -3) {
-      var sa = Math.min(1, (-3 - h) / 9);
-      for (var i = 0; i < STARS.length; i++) {
-        var s = STARS[i];
-        ctx.globalAlpha = s.a * sa;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(s.x * w, s.y * ht, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // 太陽（地平線近く〜日中、高度で高さが変わる）
-    if (h > -6) {
-      var hc = Math.max(-6, Math.min(60, h));
-      var ty = ht * (0.86 - hc / 60 * 0.72);
-      var tx = w * 0.70;
-      var warm = h < 8;
-      var core = warm ? '#fff2cf' : '#ffffff';
-      var glow = warm ? 'rgba(255,180,90,' : 'rgba(255,244,214,';
-      var g2 = ctx.createRadialGradient(tx, ty, 0, tx, ty, 46);
-      g2.addColorStop(0, glow + '0.55)');
-      g2.addColorStop(1, glow + '0)');
-      ctx.fillStyle = g2;
-      ctx.fillRect(tx - 60, ty - 60, 120, 120);
-      ctx.beginPath();
-      ctx.arc(tx, ty, 9, 0, Math.PI * 2);
-      ctx.fillStyle = core;
-      ctx.fill();
-    }
-
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     // Time（東京のローカル時刻）
