@@ -61,6 +61,7 @@
           display: inline-flex; align-items: center; gap: 6px; }
   .ic { width: 15px; height: 15px; flex: 0 0 auto; fill: none;
         stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-fill { fill: currentColor; stroke: none; }
   #datep { border: 1px solid rgba(255,255,255,0.30); border-radius: 12px;
            background: rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-weight: 600;
            padding: 9px 10px; outline: none; cursor: pointer; color-scheme: dark;
@@ -377,6 +378,8 @@
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m3 0l-.8 12.1a2 2 0 01-2 1.9H8.8a2 2 0 01-2-1.9L6 7"/></symbol>
     <symbol id="i-building" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2M10 21v-3h4v3"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
   </svg>
 
   <div id="dock">
@@ -386,6 +389,7 @@
     <input id="datep" type="date" aria-label="日付をえらぶ">
     <div class="sliderwrap"><input id="slider" type="range" min="-1000" max="1000" step="1" value="0" aria-label="現在からの時間" tabindex="-1"><div id="sliderTouch"></div></div>
     <button id="clock" class="dbtn" title="タップして時刻をえらぶ">--:--</button>
+    <button id="playBtn" class="dbtn" title="一日の空を再生"><svg class="ic ic-fill"><use href="#i-play"/></svg></button>
     <button id="liveBtn" class="dbtn">現在</button>
   </div>
 
@@ -468,6 +472,41 @@ const Store = {
     try { localStorage.setItem(key, value); } catch (e) {}
   },
 };
+
+/* ===== 確認ダイアログ（WKWebViewでは window.confirm が無反応になる場合があるため自前実装） ===== */
+function confirmDialog(message, opts) {
+  opts = opts || {};
+  const okLabel = opts.okLabel || 'OK';
+  const cancelLabel = opts.cancelLabel || 'キャンセル';
+  const danger = !!opts.danger;
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px;';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#1b2036;color:#fff;border-radius:18px;padding:22px 20px 16px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);';
+    const msg = document.createElement('div');
+    msg.textContent = message;
+    msg.style.cssText = 'font-size:15px;line-height:1.7;text-align:center;margin-bottom:18px;';
+    const btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:10px;';
+    const mk = (label, primary) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;' +
+        (primary ? ('background:' + (danger ? '#e2585d' : '#4a6fb5') + ';color:#fff;') : 'background:rgba(255,255,255,.12);color:#fff;');
+      return b;
+    };
+    const cancel = mk(cancelLabel, false);
+    const ok = mk(okLabel, true);
+    const close = v => { ov.remove(); resolve(v); };
+    cancel.addEventListener('click', () => close(false));
+    ok.addEventListener('click', () => close(true));
+    ov.addEventListener('click', e => { if (e.target === ov) close(false); });
+    btns.appendChild(cancel); btns.appendChild(ok);
+    card.appendChild(msg); card.appendChild(btns);
+    ov.appendChild(card); document.body.appendChild(ov);
+  });
+}
 
 /* ===== 登録地点 ===== */
 let places = []; // [{id, name, lat, lon, tz}]
@@ -667,7 +706,7 @@ function offsetToRaw(off) {
    'noon' = 中央がその日の正午（日付指定時。0時〜24時、日付固定） */
 let sliderAnchor = 'now';
 function applySliderRaw(raw) {
-  enterManual();
+  enterManual(); stopPlay();
   if (sliderAnchor === 'noon') {
     selMin = clampNum(Math.round(720 + rawToOffset(raw)), 0, 1439);
   } else {
@@ -690,9 +729,34 @@ function ensureTimer() {
   if (clockTimer) clearInterval(clockTimer);
   if (liveMode) clockTimer = setInterval(() => { syncControls(); renderAll(); }, 1000);
 }
-function setLive() { liveMode = true; sliderAnchor = 'now'; dateEl.value = todayStr(primaryTz()); syncControls(); renderAll(); ensureTimer(); }
+function setLive() { stopPlay(); liveMode = true; sliderAnchor = 'now'; dateEl.value = todayStr(primaryTz()); syncControls(); renderAll(); ensureTimer(); }
 function enterManual() { liveMode = false; if (clockTimer) clearInterval(clockTimer); liveBtn.classList.remove('on'); }
 liveBtn.addEventListener('click', setLive);
+
+/* ===== 再生（一日の空を早送りアニメ） ===== */
+const playBtn = document.getElementById('playBtn');
+let playTimer = null;
+function stopPlay() {
+  if (playTimer) { clearInterval(playTimer); playTimer = null; }
+  playBtn.classList.remove('on');
+  playBtn.innerHTML = '<svg class="ic ic-fill"><use href="#i-play"/></svg>';
+}
+function startPlay() {
+  enterManual();
+  sliderAnchor = 'noon';                       // その日の 0:00〜24:00 を回す（日付固定）
+  if (!dateEl.value) dateEl.value = todayStr(primaryTz());
+  playBtn.classList.add('on');
+  playBtn.innerHTML = '<svg class="ic ic-fill"><use href="#i-pause"/></svg>';
+  const STEP = 6;                              // 1フレームで進む分
+  const FPS = 24;                              // 一日を約10秒で再生
+  playTimer = setInterval(() => {
+    selMin = (selMin + STEP) % 1440;
+    slider.value = offsetToRaw(selMin - 720);
+    clockEl.textContent = hhmm(selMin);
+    renderAll();
+  }, Math.round(1000 / FPS));
+}
+playBtn.addEventListener('click', () => { playTimer ? stopPlay() : startPlay(); });
 dateEl.addEventListener('change', () => {
   if (!dateEl.value || dateEl.value === todayStr(primaryTz())) { setLive(); return; } // 今日（都市の現地日付）を選び直したら現在に戻る
   // 別の日付を選んだら: スライダーは正午センターに切り替え
@@ -883,7 +947,7 @@ function renderPlaces() {
     const del = document.createElement('button'); del.className = 'sh-del';
     del.innerHTML = '<svg class="ic" style="width:17px;height:17px"><use href="#i-trash"/></svg>';
     del.addEventListener('click', async () => {
-      if (!window.confirm(`「${p.name}」を削除しますか？`)) return;
+      if (!(await confirmDialog(`「${p.name}」を削除しますか？`, { okLabel: '削除', danger: true }))) return;
       places = places.filter(x => x.id !== p.id);
       await savePlaces(); rebuildSelects(); renderPlaces();
       toast(`「${p.name}」を削除しました`);
@@ -920,41 +984,62 @@ function placeLabel(c, level) {
   return { main: c.name, sub: c.sub || '' }; // full
 }
 
-function shareInfo() {
-  const c = panels[0] && panels[0].city;
+function panelShareInfo(p) {
+  const c = p && p.city;
   if (!c) return null;
   const date = currentDate();
   const h = refract(sunElevation(date, c.lat, c.lon));
   return { c, date, h, sky: skyColors(h) };
 }
+function shareInfo() { return panelShareInfo(panels[0]); }
+
+const SHARE_FONT = (w, s) => `${w} ${s}px -apple-system, "Hiragino Sans", sans-serif`;
+
+/* 1都市ぶんを領域 [y0, y0+hgt] に描く。scale=1 で単独、<1 で2都市用に縮小 */
+function drawCityBlock(x, W, info, level, y0, hgt, scale) {
+  const gr = x.createLinearGradient(0, y0, 0, y0 + hgt);
+  gr.addColorStop(0, css(info.sky.top));
+  gr.addColorStop(1, css(info.sky.bottom));
+  x.fillStyle = gr; x.fillRect(0, y0, W, hgt);
+  x.textAlign = 'center'; x.fillStyle = '#fff';
+  x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowBlur = 22 * scale;
+  const cx = W / 2, cy = y0 + hgt / 2;
+  const dateStr = new Intl.DateTimeFormat('ja-JP', { timeZone: info.c.tz, year: 'numeric', month: 'long', day: 'numeric' }).format(info.date);
+  x.globalAlpha = .85; x.font = SHARE_FONT(600, 40 * scale); x.fillText(dateStr, cx, cy - 250 * scale);
+  const label = placeLabel(info.c, level);
+  if (label) {
+    x.globalAlpha = 1; x.font = SHARE_FONT(700, 62 * scale); x.fillText(label.main, cx, cy - 165 * scale);
+    if (label.sub) { x.globalAlpha = .8; x.font = SHARE_FONT(500, 34 * scale); x.fillText(label.sub, cx, cy - 120 * scale); }
+  }
+  x.globalAlpha = 1; x.font = SHARE_FONT(200, 196 * scale); x.fillText(localTimeStr(info.date, info.c.tz), cx, cy + 40 * scale);
+  const lx = info.sky.lux >= 100 ? Math.round(info.sky.lux).toLocaleString() : info.sky.lux >= 1 ? info.sky.lux.toFixed(1) : info.sky.lux.toFixed(3);
+  x.globalAlpha = .9; x.font = SHARE_FONT(500, 46 * scale); x.fillText(`約 ${lx} lux`, cx, cy + 130 * scale);
+  x.globalAlpha = .85; x.font = SHARE_FONT(500, 42 * scale); x.fillText(`${info.sky.phase}・高度 ${info.h.toFixed(1)}°`, cx, cy + 192 * scale);
+  x.globalAlpha = 1; x.shadowBlur = 0;
+}
+function drawBrand(x, W, H) {
+  x.textAlign = 'center'; x.fillStyle = '#fff';
+  x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowBlur = 12;
+  x.globalAlpha = .95; x.font = SHARE_FONT(800, 44); x.fillText('いまの空色', W / 2, H - 140);
+  x.globalAlpha = .7; x.font = SHARE_FONT(500, 32); x.fillText(new URL(SHARE_URL).hostname, W / 2, H - 92);
+  x.globalAlpha = 1; x.shadowBlur = 0;
+}
 function drawShareCard(canvas, level) {
-  const d = shareInfo();
-  if (!d) return false;
   const W = 1080, H = 1920;
+  const a = panelShareInfo(panels[0]);
+  if (!a) return false;
+  const b = compare ? panelShareInfo(panels[1]) : null;
   canvas.width = W; canvas.height = H;
   const x = canvas.getContext('2d');
-  const gr = x.createLinearGradient(0, 0, 0, H);
-  gr.addColorStop(0, css(d.sky.top));
-  gr.addColorStop(1, css(d.sky.bottom));
-  x.fillStyle = gr; x.fillRect(0, 0, W, H);
-  x.textAlign = 'center'; x.fillStyle = '#fff';
-  x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowBlur = 22;
-  const F = (w, s) => `${w} ${s}px -apple-system, "Hiragino Sans", sans-serif`;
-  const dateStr = new Intl.DateTimeFormat('ja-JP', { timeZone: d.c.tz, year: 'numeric', month: 'long', day: 'numeric' }).format(d.date);
-  x.globalAlpha = .85; x.font = F(600, 40); x.fillText(dateStr, W / 2, 690);
-  const label = placeLabel(d.c, level);
-  if (label) {
-    x.globalAlpha = 1; x.font = F(700, 62); x.fillText(label.main, W / 2, 800);
-    if (label.sub) { x.globalAlpha = .8; x.font = F(500, 34); x.fillText(label.sub, W / 2, 856); }
+  if (b) {
+    drawCityBlock(x, W, a, level, 0, H / 2, 0.66);
+    drawCityBlock(x, W, b, level, H / 2, H / 2, 0.66);
+    x.globalAlpha = .3; x.strokeStyle = '#fff'; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(0, H / 2); x.lineTo(W, H / 2); x.stroke(); x.globalAlpha = 1;
+  } else {
+    drawCityBlock(x, W, a, level, 0, H, 1);
   }
-  x.globalAlpha = 1; x.font = F(200, 196);
-  x.fillText(localTimeStr(d.date, d.c.tz), W / 2, 1080);
-  const lx = d.sky.lux >= 100 ? Math.round(d.sky.lux).toLocaleString() : d.sky.lux >= 1 ? d.sky.lux.toFixed(1) : d.sky.lux.toFixed(3);
-  x.globalAlpha = .9; x.font = F(500, 46); x.fillText(`約 ${lx} lux`, W / 2, 1170);
-  x.globalAlpha = .85; x.font = F(500, 42); x.fillText(`${d.sky.phase}・高度 ${d.h.toFixed(1)}°`, W / 2, 1232);
-  x.globalAlpha = .95; x.font = F(800, 44); x.fillText('いまの空色', W / 2, 1780);
-  x.globalAlpha = .7; x.font = F(500, 32); x.fillText(new URL(SHARE_URL).hostname, W / 2, 1832);
-  x.globalAlpha = 1;
+  drawBrand(x, W, H);
   return true;
 }
 function openShare() {
@@ -965,12 +1050,18 @@ async function doShare() {
   const cv = document.createElement('canvas');
   if (!drawShareCard(cv, shareLevel)) return;
   const dataUrl = cv.toDataURL('image/png');
-  const info = shareInfo();
-  if (!info) { toast('地点を取得しています…'); return; }
-  const label = placeLabel(info.c, shareLevel);
-  const firstLine = label
-    ? `${label.main}の空、いま「${info.sky.phase}」。`
-    : `いまの空、「${info.sky.phase}」。`;
+  const a = panelShareInfo(panels[0]);
+  if (!a) { toast('地点を取得しています…'); return; }
+  const b = compare ? panelShareInfo(panels[1]) : null;
+  const la = placeLabel(a.c, shareLevel);
+  let firstLine;
+  if (b) {
+    const lb = placeLabel(b.c, shareLevel);
+    const na = la ? la.main : 'ある街', nb = lb ? lb.main : '別の街';
+    firstLine = `${na}は「${a.sky.phase}」、${nb}は「${b.sky.phase}」。`;
+  } else {
+    firstLine = la ? `${la.main}の空、いま「${a.sky.phase}」。` : `いまの空、「${a.sky.phase}」。`;
+  }
   const text = `${firstLine}\nいまの空色 — ${APP_DESC}\n${SHARE_URL}\n#いまの空色`;
   try {
     if (isNative && Plugins.Filesystem && Plugins.Share) {
